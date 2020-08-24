@@ -84,3 +84,32 @@ def add_entity(name, params, data):
     # TODO: Handle error if the columns do not match
     c.execute(sql, values)
     conn.commit()
+
+
+def get_entities(name, params):
+    conn = create_connection(db_file)
+    c = conn.cursor()
+
+    sql = f"SELECT * FROM {name} WHERE"
+
+    first = True
+    for key in params.keys():
+        if first:
+            sql = sql + f" {key} = {params[key]}"
+            first = False
+        else:
+            sql = sql + f" AND {key} = {params[key]}"
+
+    c.execute(sql)
+
+    entities = c.fetchall()
+    keys = [x[0] for x in c.description]
+    data = []
+    for entity in entities:
+        entity_kv = {}
+        for idx, value in enumerate(entity):
+            key = keys[idx]
+            entity_kv[key] = value
+        data.append(entity_kv)
+
+    return data

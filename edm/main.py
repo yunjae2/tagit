@@ -1,7 +1,9 @@
 import query
+import utils
 import subprocess
 import os
 import argparse
+import csv
 
 """
 Notation
@@ -59,14 +61,39 @@ def recorder(args):
     # TODO: Implement tee-like functionality
     ret = subprocess.run(command, capture_output=True, text=True)
 
-    # Convert param_str: str() -> params: {}
-    params = dict(item.split("=") for item in param_str.split(","))
-    params = {k.strip(): v.strip() for k, v in params.items()}
+    params = utils.param_dict(param_str)
 
     # TODO: Include also stderr? I think it is not our responsibility.
     record_data(exp_name, params, ret.stdout)
     print(ret.stdout.strip())
     print(ret.stderr.strip())
+
+
+def report_csv(data, filename):
+    with open(filename, 'w', newline='') as csvfile:
+        fieldnames = list(data[0].keys())
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        writer.writeheader()
+        for data_single in data:
+            writer.writerow(data_single)
+
+
+def report_std(data):
+    for data_single in data:
+        data_value = data_single.pop('data', None)
+        param_string = f'[EDM] exp: {exp_name}\n'
+        param_string += f'[EDM] param: '
+
+        first = True
+        for key in data_single:
+            if first:
+                param_string += f'{key} = {data_single[key]}'
+                first = False
+            else:
+                param_string += f', {key} = {data_single[key]}'
+
+        print(param_string)
+        print(data_value)
 
 
 def reporter(args):
@@ -80,8 +107,17 @@ def reporter(args):
     #   - spreadsheet (MS Excel, Google spreadsheet)
 
     exp_name = args.e
-    params = args.p
-    print(params)
+    param_str = args.p
+    csv_file = args.csv
+
+    params = utils.param_dict(param_str)
+    data = query.get_entities(exp_name, params)
+
+    if csv_file:
+        report_csv(data, csv_file)
+
+    else:
+        report_std(data)
 
 
 def manager(args):
@@ -118,6 +154,9 @@ def parse_args():
             metavar='exp_name', help='experiment name')
     rep_parser.add_argument('-p', type=str, required = True,
             metavar='params', help='parameters')
+    rep_parser.add_argument('-c', '--csv', type=str,
+            metavar='csv_file', help='Save result in csv_file in csv format')
+    # TODO: Add spreadsheet option (1. copy to clipboard, 2. save as .xlsx)
     rep_parser.set_defaults(worker=reporter)
 
     # Manage command
