@@ -124,3 +124,43 @@ def get_entities(name, params):
         data.append(ordered)
 
     return data
+
+
+def drop_table(name: str):
+    conn = create_connection(db_file)
+    c = conn.cursor()
+
+    # TODO: Handle error if the table does not exist
+    c.execute(f"DROP TABLE {exp_name}")
+
+
+def delete_rows(name: str, params: OrderedDict()):
+    conn = create_connection(db_file)
+    c = conn.cursor()
+
+    sql = f"DELETE FROM {name}"
+
+    first = True
+    for key in params.keys():
+        if params[key] == "*":
+            continue
+        if first:
+            sql = sql + f" WHERE {key} = {params[key]}"
+            first = False
+        else:
+            sql = sql + f" AND {key} = {params[key]}"
+
+    # TODO: Handle error if the table does not exist
+    # TODO: Handle error if the columns do not match
+    c.execute(sql)
+    conn.commit()
+
+
+def get_tables() -> []:
+    conn = create_connection(db_file)
+    c = conn.cursor()
+
+    c.execute("SELECT name FROM sqlite_master WHERE type='table'")
+    tables = [x[0] for x in c.fetchall()]
+
+    return tables

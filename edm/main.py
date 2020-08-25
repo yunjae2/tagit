@@ -149,17 +149,58 @@ def reporter(args):
         report_std(exp_name, params, data)
 
 
+def delete_data(exp_name: str, params: OrderedDict()):
+    query.delete_rows(exp_name, params)
+
+
+def delete_exp(exp_name: str):
+    query.drop_table(exp_name)
+
+
 def manager(args):
     # TODO: Implement the body
     # Features
     # 1. add a variable
     # 2. set the default value for a variable
-    # 3. manipulate recorded data
-    # 4. remove an experiment
-    # 5. set argument order
+    # 3. remove rows with params specified
+    # 4. regex pattern replace
+    # 5. remove an experiment
+    # 6. set argument order
+    exp_name = args.e
+    delete = args.d
+    delete_param_str = args.r
+
+    if delete:
+        delete_exp(exp_name)
+
+    elif delete_param_str:
+        params = utils.param_dict(delete_param_str)
+        delete_data(exp_name, params)
+
+
+def list_exps():
+    exps = query.get_tables()
+    for exp in exps:
+        print(exp)
+
+
+def list_vars(exp_name):
+    params = query.get_columns(exp_name)
+    params.remove('_data')
+    for param in params:
+        print(param)
+
+
+def lister(args):
+    # Features
+    # 1. List experiment names
+    # 2. List variable names in an experiment
     exp_name = args.e
 
-    print(args)
+    if exp_name:
+        list_vars(exp_name)
+    else:
+        list_exps()
 
 
 def parse_args():
@@ -182,7 +223,7 @@ def parse_args():
     rep_parser = subparsers.add_parser('report')
     rep_parser.add_argument('-e', type=str, required = True,
             metavar='exp_name', help='experiment name')
-    rep_parser.add_argument('-p', type=str, required = True,
+    rep_parser.add_argument('-p', type=str, default = "",
             metavar='params', help='parameters')
     rep_parser.add_argument('-c', '--csv', type=str, nargs='?',
             const='_use_exp_name.csv', metavar='csv_file',
@@ -198,7 +239,24 @@ def parse_args():
     man_parser = subparsers.add_parser('manage')
     man_parser.add_argument('-e', type=str, required = True,
             metavar='exp_name', help='experiment name')
+    man_parser.add_argument('-d', action='store_true',
+            help='delete an experiment')
+    # TODO: Add row removal option
+    man_parser.add_argument('-r', type=str,
+            metavar='params', help='delete rows with specified parameters')
+    # TODO: Add default value option
     man_parser.set_defaults(worker=manager)
+
+    list_parser = subparsers.add_parser('list')
+    list_parser.add_argument('-e', type=str,
+            metavar='exp_name', help='experiment name')
+    list_parser.set_defaults(worker=lister)
+
+    # TODO: Add import subparser
+    # TODO: Import from csv / file hierarchy / db dump
+
+    # TODO: Add export subparser
+    # TODO: export to db
 
     args = parser.parse_args()
     # TODO: print usage if no subcommand is provided
