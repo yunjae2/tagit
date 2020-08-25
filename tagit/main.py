@@ -105,16 +105,16 @@ def report_hrchy(exp_name: str, params: OrderedDict, data: [], path: str):
 def report_std(exp_name: str, params: OrderedDict, data: []):
     for data_single in data:
         data_value = data_single.pop('_data', None)
-        param_string = f'[tagit] exp: {exp_name}\n'
-        param_string += f'[tagit] param: '
+        param_string = f'[{exp_name}] ('
 
         first = True
         for key in data_single:
             if first:
-                param_string += f'{key} = {data_single[key]}'
+                param_string += f'{key}={data_single[key]}'
                 first = False
             else:
-                param_string += f', {key} = {data_single[key]}'
+                param_string += f', {key}={data_single[key]}'
+        param_string += f')'
 
         print(param_string)
         print(data_value)
