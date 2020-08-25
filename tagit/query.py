@@ -145,10 +145,10 @@ def delete_rows(name: str, params: OrderedDict()):
         if params[key] == "*":
             continue
         if first:
-            sql = sql + f" WHERE {key} = {params[key]}"
+            sql = sql + f" WHERE {key} = '{params[key]}'"
             first = False
         else:
-            sql = sql + f" AND {key} = {params[key]}"
+            sql = sql + f" AND {key} = '{params[key]}'"
 
     # TODO: Handle error if the table does not exist
     # TODO: Handle error if the columns do not match
