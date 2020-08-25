@@ -166,6 +166,8 @@ def manager(args):
     # 4. regex pattern replace
     # 5. remove an experiment
     # 6. set argument order
+    # 7. rename exp
+    # 8. rename variable
     exp_name = args.e
     delete = args.d
     delete_param_str = args.r
@@ -201,6 +203,24 @@ def lister(args):
         list_vars(exp_name)
     else:
         list_exps()
+
+
+def import_dump(filename):
+    query.import_dump(filename)
+
+
+def importer(args):
+    filename = args.db_dump
+    import_dump(filename)
+
+
+def dump_all(filename):
+    query.dump_db(filename)
+
+
+def exporter(args):
+    filename = args.output_dump
+    dump_all(filename)
 
 
 def parse_args():
@@ -252,11 +272,16 @@ def parse_args():
             metavar='exp_name', help='experiment name')
     list_parser.set_defaults(worker=lister)
 
-    # TODO: Add import subparser
-    # TODO: Import from csv / file hierarchy / db dump
+    imp_parser = subparsers.add_parser('import')
+    imp_parser.add_argument('db_dump', type=str,
+            help='input dump file')
+    # TODO: Import from csv / file hierarchy
+    imp_parser.set_defaults(worker=importer)
 
-    # TODO: Add export subparser
-    # TODO: export to db
+    exp_parser = subparsers.add_parser('export')
+    exp_parser.add_argument('output_dump', type=str,
+            help='output file name to dump')
+    exp_parser.set_defaults(worker=exporter)
 
     args = parser.parse_args()
     # TODO: print usage if no subcommand is provided

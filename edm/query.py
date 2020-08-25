@@ -131,7 +131,7 @@ def drop_table(name: str):
     c = conn.cursor()
 
     # TODO: Handle error if the table does not exist
-    c.execute(f"DROP TABLE {exp_name}")
+    c.execute(f"DROP TABLE {name}")
 
 
 def delete_rows(name: str, params: OrderedDict()):
@@ -164,3 +164,22 @@ def get_tables() -> []:
     tables = [x[0] for x in c.fetchall()]
 
     return tables
+
+
+def dump_db(filename):
+    conn = create_connection(db_file)
+    c = conn.cursor()
+
+    with open(filename, 'w') as f:
+        for line in conn.iterdump():
+            f.write(f"{line}\n")
+
+
+def import_dump(filename):
+    conn = create_connection(db_file)
+    c = conn.cursor()
+
+    with open(filename, 'r') as f:
+        sql = f.read()
+
+    c.executescript(sql)
