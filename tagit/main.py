@@ -226,28 +226,29 @@ def exporter(args):
 def parse_args():
     # TODO: Implement the body
     parser = argparse.ArgumentParser()
+    parser.set_defaults(worker=None)
     subparsers = parser.add_subparsers(title='subcommands')
 
     # Record command
-    rec_parser = subparsers.add_parser('record')
+    rec_parser = subparsers.add_parser('record', help='record data with tags')
     rec_parser.add_argument('-e', type=str, required = True,
             metavar='exp_name', help='experiment name')
     rec_parser.add_argument('-t', type=str, required = True,
-            metavar='tags', help='tags')
+            metavar='tags', help='"tags" (e.g., "arch=gpt3, train_set=stack_overflow, test_set=quora")')
     # TODO: Fix command in help message (not displayed)
-    rec_parser.add_argument('command', nargs=argparse.REMAINDER, type=str,
+    rec_parser.add_argument('command', nargs='+', type=str,
             help='command to execute')
     rec_parser.set_defaults(worker=recorder)
 
     # Report command
-    rep_parser = subparsers.add_parser('report')
+    rep_parser = subparsers.add_parser('report', help='report data by tags')
     rep_parser.add_argument('-e', type=str, required = True,
             metavar='exp_name', help='experiment name')
     rep_parser.add_argument('-t', type=str, default = "",
-            metavar='tags', help='tags')
+            metavar='tags', help='"tags" (e.g., "arch=gpt3, train_set=stack_overflow")')
     rep_parser.add_argument('-c', '--csv', type=str, nargs='?',
             const='_use_exp_name.csv', metavar='csv_file',
-            help='Save result in csv_file in csv format')
+            help='Save result in csv format (default: {exp_name}.csv)')
     # TODO: Add spreadsheet option (1. copy to clipboard, 2. save as .xlsx)
     # TODO: Add directory hierarchy option (the order of params
     # is set by params argument)
@@ -256,42 +257,45 @@ def parse_args():
     rep_parser.set_defaults(worker=reporter)
 
     # Manage command
-    man_parser = subparsers.add_parser('manage')
+    man_parser = subparsers.add_parser('manage', help='manage recorded data and tags')
     man_parser.add_argument('-e', type=str, required = True,
             metavar='exp_name', help='experiment name')
     man_parser.add_argument('-d', action='store_true',
             help='delete an experiment')
-    # TODO: Add row removal option
     man_parser.add_argument('-r', type=str,
             metavar='tags', help='delete rows with specified tags')
     # TODO: Add default value option
     man_parser.set_defaults(worker=manager)
 
-    list_parser = subparsers.add_parser('list')
+    list_parser = subparsers.add_parser('list', help='list experiments or tags')
     list_parser.add_argument('-e', type=str,
             metavar='exp_name', help='experiment name')
     list_parser.set_defaults(worker=lister)
 
-    imp_parser = subparsers.add_parser('import')
+    imp_parser = subparsers.add_parser('import', help='import data')
     imp_parser.add_argument('db_dump', type=str,
-            help='input dump file')
+            help='input dump file (format: sql script)')
     # TODO: Import from csv / file hierarchy
     imp_parser.set_defaults(worker=importer)
 
-    exp_parser = subparsers.add_parser('export')
+    exp_parser = subparsers.add_parser('export', help='export data')
     exp_parser.add_argument('output_dump', type=str,
-            help='output file name to dump')
+            help='output file name to dump (format: sql script)')
     exp_parser.set_defaults(worker=exporter)
 
     args = parser.parse_args()
-    # TODO: print usage if no subcommand is provided
+
+    if args.worker is None:
+        parser.print_help()
+
     return args.worker, args
 
 
 def main():
     # TODO: Implement the body
     worker, args = parse_args()
-    worker(args)
+    if worker:
+        worker(args)
 
 
 if __name__ == '__main__':
