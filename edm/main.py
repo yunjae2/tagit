@@ -1,5 +1,5 @@
-import query
-import utils
+from . import query
+from . import utils
 import subprocess
 import os
 import argparse
