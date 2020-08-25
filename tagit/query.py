@@ -98,10 +98,10 @@ def get_entities(name, params):
         if params[key] == "*":
             continue
         if first:
-            sql = sql + f" WHERE {key} = {params[key]}"
+            sql = sql + f" WHERE {key} = '{params[key]}'"
             first = False
         else:
-            sql = sql + f" AND {key} = {params[key]}"
+            sql = sql + f" AND {key} = '{params[key]}'"
 
     c.execute(sql)
 
