@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-        name = "tagit",
+        name = "etagit",
         version = "0.0.1",
         author = "Yunjae Lee",
         author_email = "lyj7694@gmail.com",
