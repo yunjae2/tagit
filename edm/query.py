@@ -1,12 +1,12 @@
 import sqlite3
+import os
 from collections import OrderedDict
 
-# TODO: DB file path
-db_file = 'edms.db'
-conn = sqlite3.connect(db_file)
+db_file = os.path.join(os.path.expanduser("~"), ".edm", "edm.db")
 
 
 def create_connection(db_file):
+    os.makedirs(os.path.dirname(db_file), exist_ok=True)
     try:
         conn = sqlite3.connect(db_file)
         return conn
