@@ -4,6 +4,7 @@ import subprocess
 import os
 import argparse
 import csv
+from collections import OrderedDict
 
 """
 Notation
@@ -32,6 +33,7 @@ def update_vars(name, params):
         if var not in curr_vars:
             new_vars.append(var)
 
+    # TODO: Show warning if a data exists before a new variable is added
     query.new_columns(name, new_vars)
 
 
@@ -63,13 +65,13 @@ def recorder(args):
 
     params = utils.param_dict(param_str)
 
-    # TODO: Include also stderr? I think it is not our responsibility.
+    # Include also stderr? I think it is not our responsibility.
     record_data(exp_name, params, ret.stdout)
     print(ret.stdout.strip())
     print(ret.stderr.strip())
 
 
-def report_csv(data, filename):
+def report_csv(exp_name: str, params: OrderedDict, data: [], filename: str):
     with open(filename, 'w', newline='') as csvfile:
         fieldnames = list(data[0].keys())
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
@@ -78,9 +80,22 @@ def report_csv(data, filename):
             writer.writerow(data_single)
 
 
-def report_std(data):
+def report_hrchy(exp_name: str, params: OrderedDict, data: [], path: str):
     for data_single in data:
-        data_value = data_single.pop('data', None)
+        data_value = data_single.pop('_data', None)
+        file_path = os.path.join(path, f"{exp_name}")
+        for key, value in data_single.items():
+            file_path = os.path.join(file_path, f"{key}-{value}")
+        # TODO: extension?
+        file_path = os.path.join(file_path, "data")
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        with open(file_path, "w") as f:
+            f.write(data_value)
+
+
+def report_std(exp_name: str, params: OrderedDict, data: []):
+    for data_single in data:
+        data_value = data_single.pop('_data', None)
         param_string = f'[EDM] exp: {exp_name}\n'
         param_string += f'[EDM] param: '
 
@@ -104,20 +119,25 @@ def reporter(args):
     # 2. Export results
     #   - terminal
     #   - csv
+    #   - hierarchical files
     #   - spreadsheet (MS Excel, Google spreadsheet)
 
     exp_name = args.e
     param_str = args.p
     csv_file = args.csv
+    hrchy_path = args.f
 
     params = utils.param_dict(param_str)
     data = query.get_entities(exp_name, params)
 
     if csv_file:
-        report_csv(data, csv_file)
-
+        if csv_file == "_use_exp_name.csv":
+            csv_file = f"{exp_name}.csv"
+        report_csv(exp_name, params, data, csv_file)
+    elif hrchy_path:
+        report_hrchy(exp_name, params, data, hrchy_path)
     else:
-        report_std(data)
+        report_std(exp_name, params, data)
 
 
 def manager(args):
@@ -127,6 +147,7 @@ def manager(args):
     # 2. set the default value for a variable
     # 3. manipulate recorded data
     # 4. remove an experiment
+    # 5. set argument order
     exp_name = args.e
 
     print(args)
@@ -154,9 +175,14 @@ def parse_args():
             metavar='exp_name', help='experiment name')
     rep_parser.add_argument('-p', type=str, required = True,
             metavar='params', help='parameters')
-    rep_parser.add_argument('-c', '--csv', type=str,
-            metavar='csv_file', help='Save result in csv_file in csv format')
+    rep_parser.add_argument('-c', '--csv', type=str, nargs='?',
+            const='_use_exp_name.csv', metavar='csv_file',
+            help='Save result in csv_file in csv format')
     # TODO: Add spreadsheet option (1. copy to clipboard, 2. save as .xlsx)
+    # TODO: Add directory hierarchy option (the order of params
+    # is set by params argument)
+    rep_parser.add_argument('-f', type=str, metavar='path',
+            help='Save results in hierarchical files')
     rep_parser.set_defaults(worker=reporter)
 
     # Manage command

@@ -1,4 +1,5 @@
 import sqlite3
+from collections import OrderedDict
 
 # TODO: DB file path
 db_file = 'edms.db'
@@ -33,7 +34,7 @@ def create_table(name):
     c = conn.cursor()
     # TODO: Handle error if the table already exists
     # TODO: Handle injection?
-    c.execute(f"CREATE TABLE {name} (data TEXT)")
+    c.execute(f"CREATE TABLE {name} (_data TEXT)")
 
 
 def get_columns(name):
@@ -54,8 +55,8 @@ def new_columns(name, columns):
 
 
 def add_entity(name, params, data):
-    # TODO: Implement the body
-    #params = {"name": "John", "age": 13}
+    # TODO: BUG if params has '*' parameters
+    # params = {"name": "John", "age": 13}
 
     # Build SQL
     sql = f"INSERT INTO {name}("
@@ -71,7 +72,7 @@ def add_entity(name, params, data):
             sql = sql + ',' + key
             value_sql = value_sql + ",?"
 
-    sql = sql + ",data) "
+    sql = sql + ",_data) "
     value_sql = value_sql + ",?)"
     sql = sql + value_sql
 
@@ -90,12 +91,14 @@ def get_entities(name, params):
     conn = create_connection(db_file)
     c = conn.cursor()
 
-    sql = f"SELECT * FROM {name} WHERE"
+    sql = f"SELECT * FROM {name}"
 
     first = True
     for key in params.keys():
+        if params[key] == "*":
+            continue
         if first:
-            sql = sql + f" {key} = {params[key]}"
+            sql = sql + f" WHERE {key} = {params[key]}"
             first = False
         else:
             sql = sql + f" AND {key} = {params[key]}"
@@ -110,6 +113,14 @@ def get_entities(name, params):
         for idx, value in enumerate(entity):
             key = keys[idx]
             entity_kv[key] = value
-        data.append(entity_kv)
+        # Order by params
+        # TODO: handle error for wrong params
+        ordered = OrderedDict()
+        for key in params:
+            ordered[key] = entity_kv.pop(key)
+        ordered.update(entity_kv)
+        ordered.move_to_end("_data")
+
+        data.append(ordered)
 
     return data
