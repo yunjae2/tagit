@@ -56,8 +56,8 @@ def recorder(args):
     # Features
     # Filter using pattern?
     #   - this can be handled in command! its not our responsibility
-    exp_name = args.e
-    param_str = args.t
+    exp_name = args.exp_name
+    param_str = args.tags
     command = args.command
 
     # TODO: Implement tee-like functionality
@@ -131,8 +131,8 @@ def reporter(args):
     #   - hierarchical files
     #   - spreadsheet (MS Excel, Google spreadsheet)
 
-    exp_name = args.e
-    param_str = args.t
+    exp_name = args.exp_name
+    param_str = args.tags
     csv_file = args.csv
     hrchy_path = args.f
 
@@ -168,7 +168,7 @@ def manager(args):
     # 6. set argument order
     # 7. rename exp
     # 8. rename variable
-    exp_name = args.e
+    exp_name = args.exp_name
     delete = args.d
     delete_param_str = args.r
 
@@ -197,7 +197,7 @@ def lister(args):
     # Features
     # 1. List experiment names
     # 2. List variable names in an experiment
-    exp_name = args.e
+    exp_name = args.exp_name
 
     if exp_name:
         list_vars(exp_name)
@@ -231,21 +231,18 @@ def parse_args():
 
     # Record command
     rec_parser = subparsers.add_parser('record', help='record data with tags')
-    rec_parser.add_argument('-e', type=str, required = True,
-            metavar='exp_name', help='experiment name')
-    rec_parser.add_argument('-t', type=str, required = True,
-            metavar='tags', help='"tags" (e.g., "arch=gpt3, train_set=stack_overflow, test_set=quora")')
-    # TODO: Fix command in help message (not displayed)
+    rec_parser.add_argument('exp_name', type=str, help='experiment name')
+    rec_parser.add_argument('tags', type=str,
+            help='"tags" (e.g., "arch=gpt3, train_set=stack_overflow, test_set=quora")')
     rec_parser.add_argument('command', nargs='+', type=str,
             help='command to execute')
     rec_parser.set_defaults(worker=recorder)
 
     # Report command
     rep_parser = subparsers.add_parser('report', help='report data by tags')
-    rep_parser.add_argument('-e', type=str, required = True,
-            metavar='exp_name', help='experiment name')
-    rep_parser.add_argument('-t', type=str, default = "",
-            metavar='tags', help='"tags" (e.g., "arch=gpt3, train_set=stack_overflow")')
+    rep_parser.add_argument('exp_name', type=str, help='experiment name')
+    rep_parser.add_argument('tags', type=str, nargs='?', default="",
+            help='"tags" (e.g., "arch=gpt3, train_set=stack_overflow, test_set=quora")')
     rep_parser.add_argument('-c', '--csv', type=str, nargs='?',
             const='_use_exp_name.csv', metavar='csv_file',
             help='Save result in csv format (default: {exp_name}.csv)')
@@ -258,18 +255,17 @@ def parse_args():
 
     # Manage command
     man_parser = subparsers.add_parser('manage', help='manage recorded data and tags')
-    man_parser.add_argument('-e', type=str, required = True,
-            metavar='exp_name', help='experiment name')
+    man_parser.add_argument('exp_name', type=str, help='experiment name')
     man_parser.add_argument('-d', action='store_true',
             help='delete an experiment')
-    man_parser.add_argument('-r', type=str,
+    man_parser.add_argument('-r', type=str, nargs='?', const=" ",
             metavar='tags', help='delete rows with specified tags')
     # TODO: Add default value option
     man_parser.set_defaults(worker=manager)
 
     list_parser = subparsers.add_parser('list', help='list experiments or tags')
-    list_parser.add_argument('-e', type=str,
-            metavar='exp_name', help='experiment name')
+    list_parser.add_argument('exp_name', type=str, nargs='?',
+            help='experiment name')
     list_parser.set_defaults(worker=lister)
 
     imp_parser = subparsers.add_parser('import', help='import data')
