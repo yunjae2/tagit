@@ -2,7 +2,7 @@ import sqlite3
 import os
 from collections import OrderedDict
 
-db_file = os.path.join(os.path.expanduser("~"), ".edm", "edm.db")
+db_file = os.path.join(os.path.expanduser("~"), ".tagit", "tagit.db")
 
 
 def create_connection(db_file):

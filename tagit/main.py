@@ -105,8 +105,8 @@ def report_hrchy(exp_name: str, params: OrderedDict, data: [], path: str):
 def report_std(exp_name: str, params: OrderedDict, data: []):
     for data_single in data:
         data_value = data_single.pop('_data', None)
-        param_string = f'[EDM] exp: {exp_name}\n'
-        param_string += f'[EDM] param: '
+        param_string = f'[tagit] exp: {exp_name}\n'
+        param_string += f'[tagit] param: '
 
         first = True
         for key in data_single:
@@ -247,8 +247,6 @@ def parse_args():
             const='_use_exp_name.csv', metavar='csv_file',
             help='Save result in csv format (default: {exp_name}.csv)')
     # TODO: Add spreadsheet option (1. copy to clipboard, 2. save as .xlsx)
-    # TODO: Add directory hierarchy option (the order of params
-    # is set by params argument)
     rep_parser.add_argument('-f', type=str, metavar='path',
             help='Save results in hierarchical files')
     rep_parser.set_defaults(worker=reporter)
@@ -259,21 +257,24 @@ def parse_args():
     man_parser.add_argument('-d', action='store_true',
             help='delete an experiment')
     man_parser.add_argument('-r', type=str, nargs='?', const=" ",
-            metavar='tags', help='delete rows with specified tags')
+            metavar='tags', help='delete data with specified tags')
     # TODO: Add default value option
     man_parser.set_defaults(worker=manager)
 
+    # List command
     list_parser = subparsers.add_parser('list', help='list experiments or tags')
     list_parser.add_argument('exp_name', type=str, nargs='?',
             help='experiment name')
     list_parser.set_defaults(worker=lister)
 
+    # Import command
     imp_parser = subparsers.add_parser('import', help='import data')
     imp_parser.add_argument('db_dump', type=str,
             help='input dump file (format: sql script)')
     # TODO: Import from csv / file hierarchy
     imp_parser.set_defaults(worker=importer)
 
+    # Export command
     exp_parser = subparsers.add_parser('export', help='export data')
     exp_parser.add_argument('output_dump', type=str,
             help='output file name to dump (format: sql script)')
@@ -288,7 +289,6 @@ def parse_args():
 
 
 def main():
-    # TODO: Implement the body
     worker, args = parse_args()
     if worker:
         worker(args)
