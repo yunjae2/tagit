@@ -66,9 +66,10 @@ def recorder(args):
     params = utils.param_dict(param_str)
 
     # Include also stderr? I think it is not our responsibility.
-    record_data(exp_name, params, ret.stdout)
-    print(ret.stdout.strip())
-    print(ret.stderr.strip())
+    record_data(exp_name, params, ret.stdout.rstrip())
+    print(ret.stdout.rstrip())
+    if ret.stderr.strip():
+        print(ret.stderr.strip())
 
 
 def report_csv(exp_name: str, params: OrderedDict, data: [], filename: str):
