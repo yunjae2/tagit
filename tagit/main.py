@@ -57,7 +57,7 @@ def recorder(args):
     # Filter using pattern?
     #   - this can be handled in command! its not our responsibility
     exp_name = args.e
-    param_str = args.p
+    param_str = args.t
     command = args.command
 
     # TODO: Implement tee-like functionality
@@ -132,7 +132,7 @@ def reporter(args):
     #   - spreadsheet (MS Excel, Google spreadsheet)
 
     exp_name = args.e
-    param_str = args.p
+    param_str = args.t
     csv_file = args.csv
     hrchy_path = args.f
 
@@ -232,8 +232,8 @@ def parse_args():
     rec_parser = subparsers.add_parser('record')
     rec_parser.add_argument('-e', type=str, required = True,
             metavar='exp_name', help='experiment name')
-    rec_parser.add_argument('-p', type=str, required = True,
-            metavar='params', help='parameters')
+    rec_parser.add_argument('-t', type=str, required = True,
+            metavar='tags', help='tags')
     # TODO: Fix command in help message (not displayed)
     rec_parser.add_argument('command', nargs=argparse.REMAINDER, type=str,
             help='command to execute')
@@ -243,8 +243,8 @@ def parse_args():
     rep_parser = subparsers.add_parser('report')
     rep_parser.add_argument('-e', type=str, required = True,
             metavar='exp_name', help='experiment name')
-    rep_parser.add_argument('-p', type=str, default = "",
-            metavar='params', help='parameters')
+    rep_parser.add_argument('-t', type=str, default = "",
+            metavar='tags', help='tags')
     rep_parser.add_argument('-c', '--csv', type=str, nargs='?',
             const='_use_exp_name.csv', metavar='csv_file',
             help='Save result in csv_file in csv format')
@@ -263,7 +263,7 @@ def parse_args():
             help='delete an experiment')
     # TODO: Add row removal option
     man_parser.add_argument('-r', type=str,
-            metavar='params', help='delete rows with specified parameters')
+            metavar='tags', help='delete rows with specified tags')
     # TODO: Add default value option
     man_parser.set_defaults(worker=manager)
 
