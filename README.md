@@ -5,7 +5,7 @@ researchers' waste of time on arranging the experiment data.
 
 ### Core functionality
 * Record shell command output with tags.
-* Report data with specified tags in various media (terminal, csv file, and hierarchical files).
+* Report data with specified tags in various format (terminal, csv file, and hierarchical files).
 * List tags.
 * Import/export data dump between systems.
 
@@ -89,3 +89,68 @@ $ tagit manage figures -d
 $ tagit list
 
 ```
+
+## Usage
+### Main commands
+1. `record`
+```
+$ tagit record <exp_name> <tags> -- <command>
+```
+Records the output of `<command>` tagged with `<tags>` in `<exp_name>` space.
+`<tags>` must be specified with double quotes (e.g., `$ tagit record myexp "a=1, b=2", -- ./run_exp.sh`)
+
+
+2. `report`
+```
+$ tagit report [-c <csv_file>] [-f <path>] <exp_name> [<tags>]
+```
+Reports the data in `<exp_name>` space.
+If <tags> are specified, tagit reports data corresponding to the specified tags.
+By default, the result is printed in terminal.
+
+* Tag order
+  - Users can specify the tag order in `<tag>`. For example, `"c=3, b=2, a=1"` makes tags printed in c-b-a order.
+  - Also, tag can be specified without values like `"c, b=2, a"`.
+  This is for setting the tag order without changing the report scope.
+
+* Result format options
+  - `-c`: Print the result in csv format
+  - `-f`: Print the result in file hierarchy; each data is saved as a file under the nested directory path, where each directory corresponds to a tag
+
+
+3. `manage`
+```
+$ tagit manage [-d] [-r [<tags>]] <exp_name>
+```
+Manages recorded data in <exp_name> space.
+
+* Manange options
+  - `-d`: Delete an experiment.
+  - `-r`: Delete data corresponding to the specified tags in an experiment.
+  This does not delete an experiment, even though every data is deleted.
+
+### Other commands
+1. `list`
+```
+$ tagit list [<exp_name>]
+```
+List the experiments. If `<exp_name>` is specified, it lists the name of tags in the specified experiment instead.
+
+
+2. `export`
+```
+$ tagit export <output_dump>
+```
+Export all experiment and data to `<output_dump>` in the format of sql script.
+
+
+3. `import`
+```
+$ tagit import <db_dump>
+```
+Import experiments and data from `<db_dump>`. `<db_dump>` must be a sql script.
+
+
+## Notes
+This tools is currently alpha version and may contain lots of bugs.
+Issues / pull requests about new features, bug reports are appreciated.
