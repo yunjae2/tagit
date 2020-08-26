@@ -8,7 +8,7 @@ setuptools.setup(
         version = "0.0.3",
         author = "Yunjae Lee",
         author_email = "lyj7694@gmail.com",
-        description = "CLI tagging system for experiment data",
+        description = "CLI tagging system for experimental data",
         long_description = long_description,
         long_description_content_type = "text/markdown",
         url = "https://github.com/yunjae2/tagit",
