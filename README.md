@@ -9,6 +9,15 @@ researchers' waste of time on arranging / manipulating / moving the experimental
 * List tags.
 * Import/export data dump between systems.
 
+
+### Directory
+- [Basic concepts](#basic-concepts)
+- [Tutorial](#tutorial)
+- [Usage](#usage)
+  - [Main commands](#main-commands)
+  - [Other commands](#other-commands)
+  
+  
 ## An example: Lisa's story
 Consider a curious sysadmin intern, Lisa, trying to discover the effect of system configurations on the performance (i.e. throughput) of server workloads.
 Lisa measures the performance by changing system configurations: OS, memory size, storage device, network, database and the number of worker threads.
@@ -26,6 +35,7 @@ After a month, Lisa decides to present her experiment as it is the last week of 
 Unfortunately, she has lost the spreadsheet and what she got is only the raw data itself,
 but now Lisa has no problem in using various utilities.
 However, Lisa now finds a serious problem: what does '8' mean in the directory path?
+
 
 ## Basic concepts
 `tagit` has three main concepts: experiments, tags, and data.
@@ -89,6 +99,7 @@ $ tagit manage figures -d
 $ tagit list
 
 ```
+
 
 ## Usage
 ### Main commands
