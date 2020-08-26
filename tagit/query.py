@@ -33,7 +33,6 @@ def create_table(name):
     conn = create_connection(db_file)
     c = conn.cursor()
     # TODO: Handle error if the table already exists
-    # TODO: Handle injection?
     c.execute(f"CREATE TABLE {name} (_data TEXT)")
 
 
@@ -55,7 +54,6 @@ def new_columns(name, columns):
 
 
 def add_entity(name, params, data):
-    # TODO: BUG if params has '*' parameters
     # params = {"name": "John", "age": 13}
 
     # Build SQL

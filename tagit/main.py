@@ -2,6 +2,7 @@ from . import query
 from . import utils
 import subprocess
 import os
+import sys
 import argparse
 import csv
 from collections import OrderedDict
@@ -52,6 +53,20 @@ def record_data(exp_name, params, data):
     query.add_entity(exp_name, params, data)
 
 
+def validate_record_params(params):
+    for key in params.keys():
+        if key == "_data":
+            print("Error: '_data' is not allowed to be used as a tag name")
+            sys.exit(-1)
+
+    bad_values = ["*", "|", ",", "\""]
+    for value in params.values():
+        for bad_value in bad_values:
+            if bad_value in value:
+                print(f"Error: the value of a tag cannot contain '{bad_value}'")
+                sys.exit(-1)
+
+
 def recorder(args):
     # Features
     # Filter using pattern?
@@ -71,6 +86,8 @@ def recorder(args):
         stdout = stdout[:-1]
     if stderr.endswith('\n'):
         stderr = stderr[:-1]
+
+    validate_record_params(params)
 
     # Include also stderr? I think it is not our responsibility.
     record_data(exp_name, params, stdout)
@@ -120,6 +137,31 @@ def report_std(exp_name: str, params: OrderedDict, data: []):
         print(data_value)
 
 
+def check_exp_exists(exp_name):
+    exps = query.get_tables()
+    if exp_name not in exps:
+        print("Error: no such experiment")
+        print("List of experiments:")
+        for exp in exps:
+            print(f"- {exp}")
+
+        sys.exit(-1)
+
+
+def validate_params(exp_name, params):
+    tags = query.get_columns(exp_name)
+    tags.remove("_data")
+
+    for param in params:
+        if param not in tags:
+            print("Error: no such tag")
+            print(f"List of tags in {exp_name}:")
+            for tag in tags:
+                print(f"- {tag}")
+
+            sys.exit(-1)
+
+
 def reporter(args):
     # TODO: Implement the body
     # Features
@@ -137,6 +179,10 @@ def reporter(args):
     hrchy_path = args.f
 
     params = utils.param_dict(param_str)
+
+    check_exp_exists(exp_name)
+    validate_params(exp_name, params)
+
     data = query.get_entities(exp_name, params)
 
     if csv_file:
@@ -172,11 +218,14 @@ def manager(args):
     delete = args.d
     delete_param_str = args.r
 
+    check_exp_exists(exp_name)
+
     if delete:
         delete_exp(exp_name)
 
     elif delete_param_str:
         params = utils.param_dict(delete_param_str)
+        validate_params(exp_name, params)
         delete_data(exp_name, params)
 
 
@@ -200,6 +249,7 @@ def lister(args):
     exp_name = args.exp_name
 
     if exp_name:
+        check_exp_exists(exp_name)
         list_vars(exp_name)
     else:
         list_exps()
