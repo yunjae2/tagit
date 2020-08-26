@@ -103,7 +103,7 @@ $ tagit list
 
 ## Usage
 ### Main commands
-1. `record`
+#### 1. `record`
 ```
 $ tagit record <exp_name> <tags> -- <command>
 ```
@@ -111,7 +111,7 @@ Records the output of `<command>` tagged with `<tags>` in `<exp_name>` space.
 `<tags>` must be specified with double quotes (e.g., `$ tagit record myexp "a=1, b=2", -- ./run_exp.sh`)
 
 
-2. `report`
+#### 2. `report`
 ```
 $ tagit report [-c <csv_file>] [-f <path>] <exp_name> [<tags>]
 ```
@@ -129,7 +129,7 @@ By default, the result is printed in terminal.
   - `-f`: Print the result in file hierarchy; each data is saved as a file under the nested directory path, where each directory corresponds to a tag
 
 
-3. `manage`
+#### 3. `manage`
 ```
 $ tagit manage [-d] [-r [<tags>]] <exp_name>
 ```
@@ -141,21 +141,21 @@ Manages recorded data in <exp_name> space.
   This does not delete an experiment, even though every data is deleted.
 
 ### Other commands
-1. `list`
+#### 1. `list`
 ```
 $ tagit list [<exp_name>]
 ```
 List the experiments. If `<exp_name>` is specified, it lists the name of tags in the specified experiment instead.
 
 
-2. `export`
+#### 2. `export`
 ```
 $ tagit export <output_dump>
 ```
 Export all experiment and data to `<output_dump>` in the format of sql script.
 
 
-3. `import`
+#### 3. `import`
 ```
 $ tagit import <db_dump>
 ```
