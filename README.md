@@ -1,7 +1,7 @@
 # tagit
 
-`tagit` is a command-line tagging system for experiment data, focusing on getting rid of
-researchers' waste of time on arranging the experiment data.
+`tagit` is a command-line tagging system for experimental data, focusing on getting rid of
+researchers' waste of time on arranging / manipulating / moving the experimental data.
 
 ### Core functionality
 * Record shell command output with tags.
