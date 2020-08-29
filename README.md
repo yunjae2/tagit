@@ -11,6 +11,7 @@ researchers' waste of time on arranging / manipulating / moving the experimental
 
 
 ### Directory
+- [Installation](#installation)
 - [Basic concepts](#basic-concepts)
 - [Tutorial](#tutorial)
 - [Usage](#usage)
