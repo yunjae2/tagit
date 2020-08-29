@@ -17,7 +17,15 @@ researchers' waste of time on arranging / manipulating / moving the experimental
   - [Main commands](#main-commands)
   - [Other commands](#other-commands)
   
-  
+
+## Installation
+`tagit` is distributed via PyPI with the name of `etagit`.
+The name of the script is the same as `tagit`, though.
+```
+$ pip3 install etagit
+```
+
+
 ## An example: Lisa's story
 Consider a curious sysadmin intern, Lisa, trying to discover the effect of system configurations on the performance (i.e. throughput) of server workloads.
 Lisa measures the performance by changing system configurations: OS, memory size, storage device, network, database and the number of worker threads.
