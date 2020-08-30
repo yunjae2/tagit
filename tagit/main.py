@@ -84,27 +84,50 @@ def recorder(args):
     exp_name = args.exp_name
     param_str = args.tags
     command = args.command
-
-    # TODO: Implement tee-like functionality
-    ret = subprocess.run(command, capture_output=True, text=True)
+    stream = args.stream
 
     params = utils.param_dict(param_str)
-
-    stdout = ret.stdout
-    stderr = ret.stderr
-    if stdout.endswith('\n'):
-        stdout = stdout[:-1]
-    if stderr.endswith('\n'):
-        stderr = stderr[:-1]
-
     validate_record_params(params)
 
-    print(stdout)
-    if stderr:
-        print(stderr)
+    if stream == "all":
+        stdout = subprocess.PIPE
+        stderr = subprocess.STDOUT
+    elif stream == "stdout":
+        stdout = subprocess.PIPE
+        stderr = subprocess.PIPE
+    elif stream == "stderr":
+        stdout = subprocess.PIPE
+        stderr = subprocess.PIPE
+    else:
+        print("Internal bug; wrong stream format")
+        sys.exit(-1)
 
-    # Include also stderr? I think it is not our responsibility.
-    record_data(exp_name, params, stdout)
+    # TODO: Implement tee-like functionality
+    ret = subprocess.run(command, stdout=stdout, stderr=stderr, text=True)
+
+    ret_stdout = ret.stdout
+    ret_stderr = ret.stderr
+
+    if ret_stdout:
+        if ret_stdout.endswith('\n'):
+            ret_stdout = ret_stdout[:-1]
+        print(ret_stdout)
+    if ret_stderr:
+        if ret_stderr.endswith('\n'):
+            ret_stderr = ret_stderr[:-1]
+        print(ret_stderr)
+
+    if stream == "all":
+        data = ret_stdout
+    elif stream == "stdout":
+        data = ret_stdout
+    elif stream == "stderr":
+        data = ret_stderr
+    else:
+        print("Internal bug; wrong stream format")
+        sys.exit(-1)
+
+    record_data(exp_name, params, data)
 
 
 def report_csv(exp_name: str, params: OrderedDict, data: [], filename: str):
@@ -296,6 +319,9 @@ def parse_args():
             help='"tags" (e.g., "arch=gpt3, train_set=stack_overflow, test_set=quora")')
     rec_parser.add_argument('command', nargs='+', type=str,
             help='command to execute')
+    rec_parser.add_argument('-s', '--stream', type=str, default='all',
+            choices=['stdout', 'stderr', 'all'],
+            help='output stream to record')
     rec_parser.set_defaults(worker=recorder)
 
     # Report command
