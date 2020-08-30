@@ -202,7 +202,8 @@ def report_hrchy(exp_name: str, params: OrderedDict, data: [], path: str):
             base_path = os.path.join(base_path, f"{key}-{value}")
 
         for key, value in dtag_data.items():
-            # TODO: extension?
+            if value is None:
+                value = ""
             dtag_name = utils.dtag_name(key)
             file_path = os.path.join(base_path, dtag_name)
             os.makedirs(os.path.dirname(file_path), exist_ok=True)
