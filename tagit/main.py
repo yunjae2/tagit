@@ -103,6 +103,9 @@ def validate_record_params(params, dtags):
             print("Internal error: wrong dtag format")
             sys.exit(-1)
 
+    # TODO: Warn if explicitly using "raw" category; users may not aware of
+    # the existence of default "raw" category.
+
 
 def recorder(args):
     # Features
@@ -359,8 +362,19 @@ def list_exps():
 def list_vars(exp_name):
     cols = query.get_columns(exp_name)
     params = [x for x in cols if not utils.is_dtag(x)]
+
+    print(f"[{exp_name}] List of tags:")
     for param in params:
-        print(param)
+        print(f"- {param}")
+
+
+def list_dtags(exp_name):
+    cols = query.get_columns(exp_name)
+    dtags = [utils.dtag_name(x) for x in cols if utils.is_dtag(x)]
+
+    print(f"[{exp_name}] List of data categories:")
+    for dtag in dtags:
+        print(f"- {dtag}")
 
 
 def lister(args):
@@ -372,6 +386,7 @@ def lister(args):
     if exp_name:
         check_exp_exists(exp_name)
         list_vars(exp_name)
+        list_dtags(exp_name)
     else:
         list_exps()
 
@@ -445,7 +460,6 @@ def parse_args():
     # TODO: Add parse command
 
     # List command
-    # TODO: Add category list option
     list_parser = subparsers.add_parser('list', help='list experiments or tags')
     list_parser.add_argument('exp_name', type=str, nargs='?',
             help='experiment name')
