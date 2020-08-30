@@ -54,7 +54,7 @@ def new_columns(name, columns):
 
 
 def add_entity(name, params, data):
-    # params = {"name": "John", "age": 13}
+    # params = {"name": ["John"], "age": ["13"]}
 
     # Build SQL
     sql = f"INSERT INTO {name}("
@@ -74,7 +74,7 @@ def add_entity(name, params, data):
     value_sql = value_sql + ",?)"
     sql = sql + value_sql
 
-    values = list(params.values())
+    values = [x[0] for x in params.values()]
     values.append(data)
 
     conn = create_connection(db_file)
@@ -86,6 +86,7 @@ def add_entity(name, params, data):
 
 
 def get_entities(name, params):
+    # params = {"name": ["John", "Sarah"], "age": ["13"]}
     conn = create_connection(db_file)
     c = conn.cursor()
 
@@ -93,13 +94,27 @@ def get_entities(name, params):
 
     first = True
     for key in params.keys():
-        if params[key] == "*":
+        mvalue = params[key]
+        if mvalue[0] == "*":
             continue
+
+        # Operators
         if first:
-            sql = sql + f" WHERE {key} = '{params[key]}'"
             first = False
+            sql = sql + " WHERE"
         else:
-            sql = sql + f" AND {key} = '{params[key]}'"
+            sql = sql + " AND"
+
+        # Values
+        sql = sql + " ("
+        first_val = True
+        for value in mvalue:
+            if first_val:
+                first_val = False
+                sql = sql + f"{key} = {value}"
+            else:
+                sql = sql + f" OR {key} = {value}"
+        sql = sql + ")"
 
     c.execute(sql)
 
@@ -140,13 +155,27 @@ def delete_rows(name: str, params: OrderedDict()):
 
     first = True
     for key in params.keys():
-        if params[key] == "*":
+        mvalue = params[key]
+        if mvalue[0] == "*":
             continue
+
+        # Operators
         if first:
-            sql = sql + f" WHERE {key} = '{params[key]}'"
             first = False
+            sql = sql + " WHERE"
         else:
-            sql = sql + f" AND {key} = '{params[key]}'"
+            sql = sql + " AND"
+
+        # Values
+        sql = sql + " ("
+        first_val = True
+        for value in mvalue:
+            if first_val:
+                first_val = False
+                sql = sql + f"{key} = {value}"
+            else:
+                sql = sql + f" OR {key} = {value}"
+        sql = sql + ")"
 
     # TODO: Handle error if the table does not exist
     # TODO: Handle error if the columns do not match

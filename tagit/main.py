@@ -65,7 +65,11 @@ def validate_record_params(params):
             sys.exit(-1)
 
     bad_values = ["*", "|", ",", "\""]
-    for value in params.values():
+    for mvalue in params.values():
+        if len(mvalue) != 1:
+            print(f"Error: multi-valued tag record detected")
+            sys.exit(-1)
+        value = mvalue[0]
         for bad_value in bad_values:
             if bad_value in value:
                 print(f"Error: the value of a tag cannot contain '{bad_value}'")

@@ -11,10 +11,11 @@ def param_dict(param_str: str) -> OrderedDict():
 
     for param in param_list:
         if '=' in param:
-            key, value = tuple(x.strip() for x in param.split('='))
-            params[key] = value
+            key, mvalue = tuple(x.strip() for x in param.split('='))
+            values = mvalue.split('|')
+            params[key] = values
         else:
             key = param.strip()
-            params[key] = '*'
+            params[key] = ['*']
 
     return params
