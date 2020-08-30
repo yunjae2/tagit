@@ -23,6 +23,7 @@ def exp_exists(name):
 
 def create_exp(name):
     query.create_table(name)
+    print(f"New experiment: [{name}]")
 
 
 def update_vars(name, params):
