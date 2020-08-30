@@ -127,6 +127,10 @@ $ tagit report [-c <csv_file>] [-f <path>] <exp_name> [<tags>]
 Reports the data in `<exp_name>` space.
 If <tags> are specified, tagit reports data corresponding to the specified tags.
 By default, the result is printed in terminal.
+  
+* Multi-valued tags
+  - Users can choose multiple tag values at a time using the operator `|`.
+  - Example: `"color=red|blue, shape=cube"`
 
 * Tag order
   - Users can specify the tag order in `<tag>`. For example, `"c=3, b=2, a=1"` makes tags printed in c-b-a order.
