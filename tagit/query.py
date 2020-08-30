@@ -1,3 +1,5 @@
+from .configs import *
+from . import utils
 import sqlite3
 import os
 from collections import OrderedDict
@@ -33,7 +35,7 @@ def create_table(name):
     conn = create_connection(db_file)
     c = conn.cursor()
     # TODO: Handle error if the table already exists
-    c.execute(f"CREATE TABLE {name} (_data TEXT)")
+    c.execute(f"CREATE TABLE {name} ({default_dtag} TEXT)")
 
 
 def get_columns(name):
@@ -53,8 +55,14 @@ def new_columns(name, columns):
         c.execute(f"ALTER TABLE {name} ADD COLUMN {column} TEXT")
 
 
-def add_entity(name, params, data):
+def new_column(name, column):
+    new_columns(name, [column])
+
+
+def add_entity(name: str, params: {}, dtags: [], data: str):
     # params = {"name": ["John"], "age": ["13"]}
+    # dtags = [dtag_prefix + "latency", dtag_prefix + "throughput"] or
+    #         [default_dtag] (most cases)
 
     # Build SQL
     sql = f"INSERT INTO {name}("
@@ -70,12 +78,17 @@ def add_entity(name, params, data):
             sql = sql + ',' + key
             value_sql = value_sql + ",?"
 
-    sql = sql + ",_data) "
-    value_sql = value_sql + ",?)"
-    sql = sql + value_sql
+    for dtag in dtags:
+        sql = sql + "," + dtag
+        value_sql = value_sql + ",?"
+
+    sql = sql + ")"
+    value_sql = value_sql + ")"
+    sql = sql + " " + value_sql
 
     values = [x[0] for x in params.values()]
-    values.append(data)
+    for dtag in dtags:
+        values.append(data)
 
     conn = create_connection(db_file)
     c = conn.cursor()
@@ -85,13 +98,38 @@ def add_entity(name, params, data):
     conn.commit()
 
 
-def get_entities(name, params):
+def get_entities(name, params, dtags):
     # params = {"name": ["John", "Sarah"], "age": ["13"]}
+    # dtags = [dtag_prefix + "latency", dtag_prefix + "throughput"] or
+    #         [default_dtag]
+
     conn = create_connection(db_file)
     c = conn.cursor()
 
-    sql = f"SELECT * FROM {name}"
+    cols = get_columns(name)
 
+    for dtag in dtags:
+        if dtag == "*":
+            dtags = [x for x in cols if utils.is_dtag(x)]
+
+    # 1. SELECT cluase
+    # Performance; select dtags and all current tags only
+    sql = f"SELECT"
+
+    first = True
+    for col in cols:
+        if utils.is_dtag(col):
+            if col not in dtags:
+                continue
+        if first:
+            first = False
+            sql = sql + f" {col}"
+        else:
+            sql = sql + f", {col}"
+
+    sql = sql + f" FROM {name}"
+
+    # 2. WHERE cluase (if required)
     first = True
     for key in params.keys():
         mvalue = params[key]
@@ -122,17 +160,16 @@ def get_entities(name, params):
     keys = [x[0] for x in c.description]
     data = []
     for entity in entities:
-        entity_kv = {}
-        for idx, value in enumerate(entity):
-            key = keys[idx]
-            entity_kv[key] = value
+        entity_kv = dict(zip(keys, entity))
+
         # Order by params
         # TODO: handle error for wrong params
         ordered = OrderedDict()
         for key in params:
             ordered[key] = entity_kv.pop(key)
         ordered.update(entity_kv)
-        ordered.move_to_end("_data")
+        for dtag in dtags:
+            ordered.move_to_end(dtag)
 
         data.append(ordered)
 

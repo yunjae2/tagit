@@ -1,5 +1,6 @@
 from . import query
 from . import utils
+from .configs import *
 import subprocess
 import os
 import sys
@@ -44,25 +45,43 @@ def update_vars(name, params):
             print(f"- {var}")
 
 
-def record_data(exp_name, params, data):
+def update_dtags(name, dtags):
+    curr_cols = query.get_columns(name)
+    new_dtags = []
+
+    for dtag in dtags:
+        if dtag not in curr_cols:
+            new_dtags.append(dtag)
+
+    query.new_columns(name, new_dtags)
+
+    if new_dtags:
+        print(f"[{name}] New data category: ")
+        for dtag in new_dtags:
+            dtag_name = utils.dtag_name(dtag)
+            print(f"- {dtag_name}")
+
+
+def record_data(exp_name, params, dtags, data):
     # Create experiment if it does not exist
     if not exp_exists(exp_name):
         create_exp(exp_name)
 
     # Update if new variable added
     update_vars(exp_name, params)
+    update_dtags(exp_name, dtags)
 
     # TODO: Show warning if the data already exists
     # The new data is recorded while the old data is kept as well
 
     # Record data to the experiment
-    query.add_entity(exp_name, params, data)
+    query.add_entity(exp_name, params, dtags, data)
 
 
-def validate_record_params(params):
+def validate_record_params(params, dtags):
     for key in params.keys():
-        if key == "_data":
-            print("Error: '_data' is not allowed to be used as a tag name")
+        if utils.is_dtag(key):
+            print(f"Error: tag name cannot start with {dtag_prefix}")
             sys.exit(-1)
 
     bad_values = ["*", "|", ",", "\""]
@@ -76,6 +95,14 @@ def validate_record_params(params):
                 print(f"Error: the value of a tag cannot contain '{bad_value}'")
                 sys.exit(-1)
 
+    for dtag in dtags:
+        if dtag == "*":
+            print("Error: wildcard category is not allowed when recording")
+            sys.exit(-1)
+        elif not utils.is_dtag(dtag):
+            print("Internal error: wrong dtag format")
+            sys.exit(-1)
+
 
 def recorder(args):
     # Features
@@ -85,9 +112,11 @@ def recorder(args):
     param_str = args.tags
     command = args.command
     stream = args.stream
+    dtag_name_str = args.d
 
     params = utils.param_dict(param_str)
-    validate_record_params(params)
+    dtags = utils.mkup_dtag(dtag_name_str)
+    validate_record_params(params, dtags)
 
     if stream == "all":
         stdout = subprocess.PIPE
@@ -127,10 +156,29 @@ def recorder(args):
         print("Internal bug; wrong stream format")
         sys.exit(-1)
 
-    record_data(exp_name, params, data)
+    record_data(exp_name, params, dtags, data)
+
+
+def refine_dtag_names(data):
+    refined = []
+    for data_single in data:
+        refined_single = OrderedDict()
+        for key in data_single:
+            value = data_single[key]
+            if utils.is_dtag(key):
+                dtag_name = utils.dtag_name(key)
+                refined_single[dtag_name] = value
+            else:
+                refined_single[key] = value
+
+        refined.append(refined_single)
+
+    return refined
 
 
 def report_csv(exp_name: str, params: OrderedDict, data: [], filename: str):
+    data = refine_dtag_names(data)
+
     with open(filename, 'w', newline='') as csvfile:
         fieldnames = list(data[0].keys())
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
@@ -141,24 +189,36 @@ def report_csv(exp_name: str, params: OrderedDict, data: [], filename: str):
 
 def report_hrchy(exp_name: str, params: OrderedDict, data: [], path: str):
     for data_single in data:
-        data_value = data_single.pop('_data', None)
-        file_path = os.path.join(path, f"{exp_name}")
-        for key, value in data_single.items():
-            file_path = os.path.join(file_path, f"{key}-{value}")
-        # TODO: extension?
-        file_path = os.path.join(file_path, "data")
-        os.makedirs(os.path.dirname(file_path), exist_ok=True)
-        with open(file_path, "w") as f:
-            f.write(data_value)
+        tag_data = OrderedDict((k, data_single[k]) for k in data_single \
+                if not utils.is_dtag(k))
+        dtag_data = OrderedDict((k, data_single[k]) for k in data_single \
+                if utils.is_dtag(k))
+
+        base_path = os.path.join(path, f"{exp_name}")
+        for key, value in tag_data.items():
+            base_path = os.path.join(base_path, f"{key}-{value}")
+
+        for key, value in dtag_data.items():
+            # TODO: extension?
+            dtag_name = utils.dtag_name(key)
+            file_path = os.path.join(base_path, dtag_name)
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+            with open(file_path, "w") as f:
+                f.write(value)
 
 
 def report_std(exp_name: str, params: OrderedDict, data: []):
     for data_single in data:
-        data_value = data_single.pop('_data', None)
+        tag_data = OrderedDict((k, data_single[k]) for k in data_single \
+                if not utils.is_dtag(k))
+        dtag_data = OrderedDict((k, data_single[k]) for k in data_single \
+                if utils.is_dtag(k))
+
+        # Parameter
         param_string = f'[{exp_name}] ('
 
         first = True
-        for key in data_single:
+        for key in tag_data:
             if first:
                 param_string += f'{key}={data_single[key]}'
                 first = False
@@ -166,8 +226,21 @@ def report_std(exp_name: str, params: OrderedDict, data: []):
                 param_string += f', {key}={data_single[key]}'
         param_string += f')'
 
+        # Data
+        data_string = ""
+
+        first = True
+        for key in dtag_data:
+            dtag_name = utils.dtag_name(key)
+            value = dtag_data[key]
+            if first:
+                first = False
+                data_string = data_string + f"- {dtag_name}: {value}"
+            else:
+                data_string = data_string + f"\n- {dtag_name}: {value}"
+
         print(param_string)
-        print(data_value)
+        print(data_string)
 
 
 def check_exp_exists(exp_name):
@@ -181,9 +254,10 @@ def check_exp_exists(exp_name):
         sys.exit(-1)
 
 
-def validate_params(exp_name, params):
-    tags = query.get_columns(exp_name)
-    tags.remove("_data")
+def validate_params(exp_name, params, dtags):
+    cols = query.get_columns(exp_name)
+    tags = [x for x in cols if not utils.is_dtag(x)]
+    curr_dtags = [x for x in cols if utils.is_dtag(x)]
 
     for param in params:
         if param not in tags:
@@ -191,7 +265,18 @@ def validate_params(exp_name, params):
             print(f"List of tags in {exp_name}:")
             for tag in tags:
                 print(f"- {tag}")
+            sys.exit(-1)
 
+    cols = tags
+    for dtag in dtags:
+        if dtag == "*":
+            continue
+        if dtag not in curr_dtags:
+            print("Error: no such category")
+            print(f"List of categories in {exp_name}:")
+            for curr_dtag in curr_dtags:
+                dtag_name = utils.dtag_name(curr_dtag)
+                print(f"- {dtag_name}")
             sys.exit(-1)
 
 
@@ -210,13 +295,16 @@ def reporter(args):
     param_str = args.tags
     csv_file = args.csv
     hrchy_path = args.f
+    dtag_name_str = args.d
 
     params = utils.param_dict(param_str)
+    dtags = utils.mkup_dtag(dtag_name_str)
 
     check_exp_exists(exp_name)
-    validate_params(exp_name, params)
+    validate_params(exp_name, params, dtags)
 
-    data = query.get_entities(exp_name, params)
+    # data: [{tag1: val1, tag2: val2, ..., dtag1: data1, ...}, {...}, ...]
+    data = query.get_entities(exp_name, params, dtags)
 
     if csv_file:
         if csv_file == "_use_exp_name.csv":
@@ -269,8 +357,8 @@ def list_exps():
 
 
 def list_vars(exp_name):
-    params = query.get_columns(exp_name)
-    params.remove('_data')
+    cols = query.get_columns(exp_name)
+    params = [x for x in cols if not utils.is_dtag(x)]
     for param in params:
         print(param)
 
@@ -320,8 +408,10 @@ def parse_args():
     rec_parser.add_argument('command', nargs='+', type=str,
             help='command to execute')
     rec_parser.add_argument('-s', '--stream', type=str, default='all',
-            choices=['stdout', 'stderr', 'all'],
+            metavar='stream', choices=['stdout', 'stderr', 'all'],
             help='output stream to record')
+    rec_parser.add_argument('-d', type=str, metavar='category', default='raw',
+            help='data category to record into (not required in general cases)')
     rec_parser.set_defaults(worker=recorder)
 
     # Report command
@@ -335,6 +425,8 @@ def parse_args():
     # TODO: Add spreadsheet option (1. copy to clipboard, 2. save as .xlsx)
     rep_parser.add_argument('-f', type=str, metavar='path',
             help='Save results in hierarchical files')
+    rep_parser.add_argument('-d', type=str, metavar='categories', default='*',
+            help='data category to report (e.g., "latency, throughput")')
     rep_parser.set_defaults(worker=reporter)
 
     # Manage command
@@ -347,7 +439,13 @@ def parse_args():
     # TODO: Add default value option
     man_parser.set_defaults(worker=manager)
 
+    # TODO: Separate manage command and remove command
+    # TODO: Add data category option to delete
+
+    # TODO: Add parse command
+
     # List command
+    # TODO: Add category list option
     list_parser = subparsers.add_parser('list', help='list experiments or tags')
     list_parser.add_argument('exp_name', type=str, nargs='?',
             help='experiment name')
