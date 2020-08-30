@@ -37,6 +37,11 @@ def update_vars(name, params):
     # TODO: Show warning if a data exists before a new variable is added
     query.new_columns(name, new_vars)
 
+    if new_vars:
+        print(f"[{name}] New tag added:")
+        for var in new_vars:
+            print(f"- {var}")
+
 
 def record_data(exp_name, params, data):
     # Create experiment if it does not exist
@@ -89,12 +94,12 @@ def recorder(args):
 
     validate_record_params(params)
 
-    # Include also stderr? I think it is not our responsibility.
-    record_data(exp_name, params, stdout)
-
     print(stdout)
     if stderr:
         print(stderr)
+
+    # Include also stderr? I think it is not our responsibility.
+    record_data(exp_name, params, stdout)
 
 
 def report_csv(exp_name: str, params: OrderedDict, data: [], filename: str):
