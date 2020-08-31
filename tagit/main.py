@@ -6,6 +6,7 @@ import os
 import sys
 import argparse
 import csv
+from tabulate import tabulate
 from collections import OrderedDict
 
 """
@@ -16,6 +17,13 @@ var: variable
 # TODO: Deal with default var values
 
 
+def get_exps():
+    tables = query.get_tables()
+    exps = [x for x in tables if not utils.is_parser_name(x)]
+
+    return exps
+
+
 def exp_exists(name):
     if query.table_exists(name):
         return True
@@ -23,7 +31,9 @@ def exp_exists(name):
 
 
 def create_exp(name):
-    query.create_table(name)
+    parser_name = utils.mkup_parser_name(name)
+    query.create_table(name, [default_dtag])
+    create_parser(parser_name)
     print(f"New experiment: [{name}]")
 
 
@@ -103,6 +113,11 @@ def validate_record_params(params, dtags):
             print("Internal error: wrong dtag format")
             sys.exit(-1)
 
+        for bad_value in bad_values:
+            if bad_value in dtag:
+                print(f"Error: the name of a category cannot contain '{bad_value}'")
+                sys.exit(-1)
+
     # TODO: Warn if explicitly using "raw" category; users may not aware of
     # the existence of default "raw" category.
 
@@ -118,7 +133,7 @@ def recorder(args):
     dtag_name_str = args.d
 
     params = utils.param_dict(param_str)
-    dtags = utils.mkup_dtag(dtag_name_str)
+    dtags = utils.mkup_dtags(dtag_name_str)
     validate_record_params(params, dtags)
 
     if stream == "all":
@@ -248,7 +263,7 @@ def report_std(exp_name: str, params: OrderedDict, data: []):
 
 
 def check_exp_exists(exp_name):
-    exps = query.get_tables()
+    exps = get_exps()
     if exp_name not in exps:
         print("Error: no such experiment")
         print("List of experiments:")
@@ -302,10 +317,13 @@ def reporter(args):
     dtag_name_str = args.d
 
     params = utils.param_dict(param_str)
-    dtags = utils.mkup_dtag(dtag_name_str)
+    dtags = utils.mkup_dtags(dtag_name_str)
 
     check_exp_exists(exp_name)
     validate_params(exp_name, params, dtags)
+
+    # Lazy parsing
+    run_parsing_graph(exp_name)
 
     # data: [{tag1: val1, tag2: val2, ..., dtag1: data1, ...}, {...}, ...]
     data = query.get_entities(exp_name, params, dtags)
@@ -325,7 +343,11 @@ def delete_data(exp_name: str, params: OrderedDict()):
 
 
 def delete_exp(exp_name: str):
+    parser_name = utils.mkup_parser_name(exp_name)
     query.drop_table(exp_name)
+
+    if parser_exists(parser_name):
+        query.drop_table(parser_name)
 
 
 def manager(args):
@@ -355,7 +377,7 @@ def manager(args):
 
 
 def list_exps():
-    exps = query.get_tables()
+    exps = get_exps()
     for exp in exps:
         print(exp)
 
@@ -410,6 +432,126 @@ def exporter(args):
     dump_all(filename)
 
 
+def validate_src_dtag(exp_name, dtag_src):
+    cols = query.get_columns(exp_name)
+    curr_dtags = [x for x in cols if utils.is_dtag(x)]
+
+    if dtag_src not in curr_dtags:
+        print("Error: source data category does not exist")
+        sys.exit(-1)
+
+
+def parser_exists(parser_name) -> bool:
+    if query.table_exists(parser_name):
+        return True
+    return False
+
+
+def create_parser(parser_name):
+    query.create_table(parser_name, ["rule", "src_dtag", "dest_dtag", "append"])
+
+
+def add_parsing_rule(exp_name, rule, dtag_src, dtag_dest, append):
+    parser_name = utils.mkup_parser_name(exp_name)
+
+    # Create parser for the experiment if it has not been created yet
+    if not parser_exists(parser_name):
+        create_parser(parser_name)
+
+    params = OrderedDict([
+        ("rule", rule),
+        ("src_dtag", dtag_src),
+        ("dest_dtag", dtag_dest),
+        ("append", append)
+        ])
+    query._add_entity(parser_name, params)
+
+
+def get_dtags_data(exp_name, params, dtags):
+    data = query.get_entities(exp_name, params, dtags)
+    dtag_data = []
+
+    for data_single in data:
+        dtag_data_single = OrderedDict((k, v) for (k, v) \
+                in data_single.items() if utils.is_dtag(k))
+        dtag_data.append(dtag_data_single)
+
+    return dtag_data
+
+
+def run_parsing_graph(exp_name):
+    # TODO: Implement the body
+    pass
+
+
+def parse_adder(args):
+    exp_name = args.exp_name
+    rule = args.rule
+    dtag_name_dest = args.dest
+    dtag_name_src = args.src
+    append = args.append
+
+    dtag_dest = utils.mkup_dtag(dtag_name_dest)
+    dtag_src = utils.mkup_dtag(dtag_name_src)
+
+    check_exp_exists(exp_name)
+    validate_src_dtag(exp_name, dtag_src)
+
+    # Add parsing rule to experiment
+    rule_id = add_parsing_rule(exp_name, rule, dtag_src, dtag_dest, append)
+
+
+def list_rules(exp_name):
+    parser_name = utils.mkup_parser_name(exp_name)
+
+    if parser_exists(parser_name):
+        data = query._get_entities(parser_name, {}, {})
+    else:
+        data = []
+
+    headers = ["rule", "src", "dest", "append"]
+
+    values = []
+    for data_single in data:
+        data_single_values = []
+        for key, value in data_single.items():
+            if utils.is_dtag(value):
+                value = utils.dtag_name(value)
+            data_single_values.append(value)
+        values.append(data_single_values)
+
+    print(tabulate(values, headers=headers, showindex="always"))
+
+
+def parse_lister(args):
+    exp_name = args.exp_name
+
+    check_exp_exists(exp_name)
+    list_rules(exp_name)
+
+
+def remove_all_rules(exp_name):
+    parser_name = utils.mkup_parser_name(exp_name)
+    query._delete_rows(parser_name, OrderedDict([]))
+
+
+def remove_rule(exp_name, rule_id):
+    parser_name = utils.mkup_parser_name(exp_name)
+    query._delete_rows(parser_name, OrderedDict([]), offset=rule_id, limit=1)
+
+
+def parse_remover(args):
+    exp_name = args.exp_name
+    remove_all = args.all
+    rule_id = args.rule_id
+
+    check_exp_exists(exp_name)
+    if remove_all:
+        remove_all_rules(exp_name)
+    else:
+        remove_rule(exp_name, rule_id)
+
+
 def parse_args():
     # TODO: Implement the body
     parser = argparse.ArgumentParser()
@@ -458,7 +600,40 @@ def parse_args():
     # TODO: Separate manage command and remove command
     # TODO: Add data category option to delete
 
-    # TODO: Add parse command
+    # Parse command
+    par_parser = subparsers.add_parser('parse',
+            help='parse recorded data into data categories')
+    par_subparsers = par_parser.add_subparsers(title='subcommands')
+
+    # Parse add command
+    par_add_parser = par_subparsers.add_parser('add',
+            help='add a parsing rule')
+    par_add_parser.add_argument('exp_name', type=str, help='experiment name')
+    par_add_parser.add_argument('dest', type=str,
+            help='target data category to save parsing output to')
+    par_add_parser.add_argument('rule', type=str,
+            help='parsing rule (e.g., "awk /^latency/{print $NF}")')
+    par_add_parser.add_argument('-s', '--src', type=str, metavar='src',
+            default='raw', help='source data category to parse')
+    par_add_parser.add_argument('-a', '--append', action='store_true',
+            help='append output to target data category')
+    par_add_parser.set_defaults(worker=parse_adder)
+
+    # Parse list command
+    par_list_parser = par_subparsers.add_parser('list',
+            help='list current parsing rules')
+    par_list_parser.add_argument('exp_name', type=str, help='experiment name')
+    par_list_parser.set_defaults(worker=parse_lister)
+
+    # Parse remove command
+    par_rem_parser = par_subparsers.add_parser('remove',
+            help='remove a parsing rule')
+    par_rem_parser.add_argument('exp_name', type=str, help='experiment name')
+    par_rem_parser.add_argument('rule_id', type=int, nargs='?',
+            help='id of the parsing rule to remove')
+    par_rem_parser.add_argument('-a', '--all', action='store_true',
+            help='remove all rules')
+    par_rem_parser.set_defaults(worker=parse_remover)
 
     # List command
     list_parser = subparsers.add_parser('list', help='list experiments or tags')

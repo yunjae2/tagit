@@ -31,11 +31,24 @@ def table_exists(name):
     return True
 
 
-def create_table(name):
+def create_table(name, cols):
+    # TODO: Handle error if the table already exists
     conn = create_connection(db_file)
     c = conn.cursor()
-    # TODO: Handle error if the table already exists
-    c.execute(f"CREATE TABLE {name} ({default_dtag} TEXT)")
+
+    sql = f"CREATE TABLE {name} ("
+
+    first = True
+    for col in cols:
+        if first:
+            first = False
+            sql = sql + f"{col} TEXT"
+        else:
+            sql = sql + f", {col} TEXT"
+
+    sql = sql + ")"
+
+    c.execute(sql)
 
 
 def get_columns(name):
@@ -89,6 +102,34 @@ def add_entity(name: str, params: {}, dtags: [], data: str):
     values = [x[0] for x in params.values()]
     for dtag in dtags:
         values.append(data)
+
+    conn = create_connection(db_file)
+    c = conn.cursor()
+    # TODO: Handle error if the table does not exists
+    # TODO: Handle error if the columns do not match
+    c.execute(sql, values)
+    conn.commit()
+
+
+def _add_entity(table: str, entity: {}):
+    sql = f"INSERT INTO {table}("
+    value_sql = f"VALUES("
+
+    first = True
+    for key in entity.keys():
+        if first:
+            sql = sql + key
+            value_sql = value_sql + "?"
+            first = False
+        else:
+            sql = sql + ',' + key
+            value_sql = value_sql + ",?"
+
+    sql = sql + ")"
+    value_sql = value_sql + ")"
+    sql = sql + " " + value_sql
+
+    values = list(entity.values())
 
     conn = create_connection(db_file)
     c = conn.cursor()
@@ -176,6 +217,58 @@ def get_entities(name, params, dtags):
     return data
 
 
+def _get_entities(table, conditions, cols):
+    # 1. SELECT cluase
+    sql = f"SELECT"
+
+    if not conditions:
+        sql = sql + " *"
+    else:
+        first = True
+        for col in cols:
+            if first:
+                first = False
+                sql = sql + f" {col}"
+            else:
+                sql = sql + f", {col}"
+
+    sql = sql + f" FROM {table}"
+
+    # 2. WHERE cluase (if required)
+    first = True
+    for key, mvalue in conditions.items():
+        # Operators
+        if first:
+            first = False
+            sql = sql + " WHERE"
+        else:
+            sql = sql + " AND"
+
+        # Values
+        sql = sql + " ("
+        first_val = True
+        for value in mvalue:
+            if first_val:
+                first_val = False
+                sql = sql + f"{key} = {value}"
+            else:
+                sql = sql + f" OR {key} = {value}"
+        sql = sql + ")"
+
+    conn = create_connection(db_file)
+    c = conn.cursor()
+
+    c.execute(sql)
+
+    entities = c.fetchall()
+    keys = [x[0] for x in c.description]
+    data = []
+    for entity in entities:
+        data.append(OrderedDict(zip(keys, entity)))
+
+    return data
+
+
 def drop_table(name: str):
     conn = create_connection(db_file)
     c = conn.cursor()
@@ -214,6 +307,44 @@ def delete_rows(name: str, params: OrderedDict()):
                 sql = sql + f" OR {key} = {value}"
         sql = sql + ")"
 
+    # TODO: Handle error if the table does not exist
+    # TODO: Handle error if the columns do not match
+    c.execute(sql)
+    conn.commit()
+
+
+def _delete_rows(table: str, conditions: OrderedDict(), limit=None, offset=0):
+    sql = f"DELETE FROM {table}"
+
+    first = True
+    for key, mvalue in conditions.items():
+        if mvalue[0] == "*":
+            continue
+
+        # Operators
+        if first:
+            first = False
+            sql = sql + " WHERE"
+        else:
+            sql = sql + " AND"
+
+        # Values
+        sql = sql + " ("
+        first_val = True
+        for value in mvalue:
+            if first_val:
+                first_val = False
+                sql = sql + f"{key} = {value}"
+            else:
+                sql = sql + f" OR {key} = {value}"
+        sql = sql + ")"
+
+
+    if limit:
+        sql = sql + f" LIMIT {limit} OFFSET {offset}"
+
+    conn = create_connection(db_file)
+    c = conn.cursor()
     # TODO: Handle error if the table does not exist
     # TODO: Handle error if the columns do not match
     c.execute(sql)

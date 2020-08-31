@@ -23,7 +23,7 @@ def param_dict(param_str: str) -> OrderedDict():
     return params
 
 
-def mkup_dtag(name_str: str) -> []:
+def mkup_dtags(name_str: str) -> []:
     # Convert name_str: str() -> dtags: []
     # Make up the internal names of the data categories
 
@@ -42,6 +42,18 @@ def mkup_dtag(name_str: str) -> []:
     return dtags
 
 
+def mkup_dtag(name: str) -> str:
+    # Convert name: str() -> dtag: str()
+    # Make up the internal name of the data category
+    dtags = mkup_dtags(name)
+
+    if len(dtags) != 1:
+        print("Error: specify only one category")
+        sys.exit(-1)
+
+    return dtags[0]
+
+
 def dtag_name(dtag: str) -> str:
     # Extract the name of the data category
     if not is_dtag(dtag):
@@ -55,3 +67,17 @@ def is_dtag(col: str) -> bool:
     if col.startswith(dtag_prefix):
         return True
     return False
+
+
+def is_parser_name(table: str) -> bool:
+    if table.startswith(parser_prefix):
+        return True
+    return False
+
+
+def mkup_parser_name(exp_name: str) -> str:
+    if is_parser_name(exp_name):
+        print("Interal error: wrong exp_name format")
+        sys.exit(-1)
+
+    return parser_prefix + exp_name
