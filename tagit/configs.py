@@ -7,4 +7,4 @@ default_dtag = dtag_prefix + "raw"
 
 parser_prefix = tagit_prefix + "parser_"
 
-dtag_status_prefix = tagit_prefix + "dtag_status_"
+dtag_list_prefix = tagit_prefix + "dtag_list_"

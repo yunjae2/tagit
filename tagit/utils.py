@@ -76,14 +76,22 @@ def is_parser_name(table: str) -> bool:
 
 
 def mkup_parser_name(exp_name: str) -> str:
-    if is_parser_name(exp_name):
+    if is_prohibited_name(exp_name):
         print("Interal error: wrong exp_name format")
         sys.exit(-1)
 
     return parser_prefix + exp_name
 
 
-def is_internal_metadata(name: str) -> bool:
+def is_prohibited_name(name: str) -> bool:
     if name.startswith(tagit_prefix):
         return True
     return False
+
+
+def mkup_dtag_list_name(exp_name: str) -> str:
+    if is_prohibited_name(exp_name):
+        print("Interal error: wrong exp_name format")
+        sys.exit(-1)
+
+    return dtag_list_prefix + exp_name

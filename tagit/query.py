@@ -139,6 +139,12 @@ def _add_entity(table: str, entity: {}):
     conn.commit()
 
 
+def _add_entities(table: str, entities: []):
+    # TODO: Optimization
+    for entity in entities:
+        _add_entity(table, entity)
+
+
 def get_entities(name, params, dtags):
     # params = {"name": ["John", "Sarah"], "age": ["13"]}
     # dtags = [dtag_prefix + "latency", dtag_prefix + "throughput"] or
@@ -378,3 +384,40 @@ def import_dump(filename):
         sql = f.read()
 
     c.executescript(sql)
+
+
+def _update_row(table: str, conditions: {}, vals: {}):
+    # 1. UPDATE clause
+    sql = f"UPDATE {table}"
+
+    # 2. SET clause
+    sql = sql + " SET"
+    first = True
+    for key, value in vals.items():
+        if first:
+            first = False
+            sql = sql + f" {key} = '{value}'"
+        else:
+            sql = sql + f", {key} = '{value}'"
+
+    # 3. WHERE clause
+    sql = sql + " WHERE"
+    first = True
+    for key, value in conditions.items():
+        if first:
+            first = False
+            sql = sql + f" {key} = '{value}'"
+        else:
+            sql = sql + f", {key} = '{value}'"
+
+    conn = create_connection(db_file)
+    c = conn.cursor()
+    # TODO: Handle error if the table does not exist
+    # TODO: Handle error if the columns do not match
+    c.execute(sql)
+    conn.commit()
+
+
+def _update_rows(table: str, cond_vals: []):
+    for cond, val in cond_vals:
+        _update_row(table, cond, val)

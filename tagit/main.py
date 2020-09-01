@@ -55,7 +55,38 @@ def update_vars(name, params):
             print(f"- {var}")
 
 
-def update_dtags(name, dtags):
+def dtag_list_exists(name):
+    if query.table_exists(name):
+        return True
+    return False
+
+
+def create_dtag_list(name):
+    query.create_table(name, ["name", "derived", "updated"])
+
+
+def update_dtag_list(name, dtags, derived):
+    dtag_list_name = utils.mkup_dtag_list_name(name)
+
+    if not dtag_list_exists(dtag_list_name):
+        create_dtag_list(dtag_list_name)
+
+    curr_dtag_list = query._get_entities(dtag_list_name, {}, ["name"])
+    curr_dtags = [x["name"] for x in curr_dtag_list]
+    new_dtags = []
+
+    for dtag in dtags:
+        if dtag not in curr_dtags:
+            new_dtags.append({
+                "name": dtag,
+                "derived": str(derived),
+                "updated": "False"
+                })
+
+    query._add_entities(dtag_list_name, new_dtags)
+
+
+def update_dtags(name, dtags, derived=False):
     curr_cols = query.get_columns(name)
     new_dtags = []
 
@@ -65,11 +96,19 @@ def update_dtags(name, dtags):
 
     query.new_columns(name, new_dtags)
 
+    update_dtag_list(name, dtags, derived)
+
     if new_dtags:
         print(f"[{name}] New data category: ")
         for dtag in new_dtags:
             dtag_name = utils.dtag_name(dtag)
             print(f"- {dtag_name}")
+
+
+def mark_dtags_updated(exp_name, dtags):
+    dtag_list_name = utils.mkup_dtag_list_name(exp_name)
+    cond_vals = [({"name": x}, {"updated": "True"}) for x in dtags]
+    query._update_rows(dtag_list_name, cond_vals)
 
 
 def record_data(exp_name, params, dtags, data):
@@ -87,10 +126,13 @@ def record_data(exp_name, params, dtags, data):
     # Record data to the experiment
     query.add_entity(exp_name, params, dtags, data)
 
+    # Mark updated data categories for lazy parsing
+    mark_dtags_updated(exp_name, dtags)
+
 
 def validate_record_params(params, dtags):
     for key in params.keys():
-        if utils.is_internal_metadata(key):
+        if utils.is_prohibited_name(key):
             print(f"Error: tag name cannot start with {tagit_prefix}")
             sys.exit(-1)
 
@@ -344,10 +386,14 @@ def delete_data(exp_name: str, params: OrderedDict()):
 
 def delete_exp(exp_name: str):
     parser_name = utils.mkup_parser_name(exp_name)
+    dtag_list_name = utils.mkup_dtag_list_name(exp_name)
+
     query.drop_table(exp_name)
 
     if parser_exists(parser_name):
         query.drop_table(parser_name)
+    if dtag_list_exists(dtag_list_name):
+        query.drop_table(dtag_list_name)
 
 
 def manager(args):
@@ -481,6 +527,7 @@ def get_dtags_data(exp_name, params, dtags):
 
 def run_parsing_graph(exp_name):
     # TODO: Implement the body
+    # TODO: Reset 'updated' of each dtag to False
     pass
 
 
@@ -497,6 +544,8 @@ def parse_adder(args):
     check_exp_exists(exp_name)
     validate_src_dtag(exp_name, dtag_src)
 
+    update_dtags(exp_name, [dtag_dest], derived=True)
+
     # Add parsing rule to experiment
     rule_id = add_parsing_rule(exp_name, rule, dtag_src, dtag_dest, append)
 
@@ -505,7 +554,7 @@ def list_rules(exp_name):
     parser_name = utils.mkup_parser_name(exp_name)
 
     if parser_exists(parser_name):
-        data = query._get_entities(parser_name, {}, {})
+        data = query._get_entities(parser_name, {}, [])
     else:
         data = []
 
