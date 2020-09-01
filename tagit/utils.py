@@ -81,3 +81,9 @@ def mkup_parser_name(exp_name: str) -> str:
         sys.exit(-1)
 
     return parser_prefix + exp_name
+
+
+def is_internal_metadata(name: str) -> bool:
+    if name.startswith(tagit_prefix):
+        return True
+    return False

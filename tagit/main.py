@@ -90,8 +90,8 @@ def record_data(exp_name, params, dtags, data):
 
 def validate_record_params(params, dtags):
     for key in params.keys():
-        if utils.is_dtag(key):
-            print(f"Error: tag name cannot start with {dtag_prefix}")
+        if utils.is_internal_metadata(key):
+            print(f"Error: tag name cannot start with {tagit_prefix}")
             sys.exit(-1)
 
     bad_values = ["*", "|", ",", "\""]

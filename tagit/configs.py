@@ -1,6 +1,10 @@
 # Used for the raw data and data categories
 # Also acts like the default dtag
-dtag_prefix = "_tagit_data_"
+tagit_prefix = "_tagit_"
+
+dtag_prefix = tagit_prefix + "data_"
 default_dtag = dtag_prefix + "raw"
 
-parser_prefix = "_tagit_parser_"
+parser_prefix = tagit_prefix + "parser_"
+
+dtag_status_prefix = tagit_prefix + "dtag_status_"
