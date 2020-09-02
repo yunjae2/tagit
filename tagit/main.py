@@ -19,7 +19,7 @@ var: variable
 
 def get_exps():
     tables = query.get_tables()
-    exps = [x for x in tables if not utils.is_parser_name(x)]
+    exps = [x for x in tables if utils.is_exp_name(x)]
 
     return exps
 
@@ -71,7 +71,7 @@ def update_dtag_list(name, dtags, derived):
     if not dtag_list_exists(dtag_list_name):
         create_dtag_list(dtag_list_name)
 
-    curr_dtag_list = query._get_entities(dtag_list_name, {}, ["name"])
+    curr_dtag_list = query._get_entities(dtag_list_name, {}, ["name", "derived"])
     curr_dtags = [x["name"] for x in curr_dtag_list]
     new_dtags = []
 
@@ -83,6 +83,7 @@ def update_dtag_list(name, dtags, derived):
                 "updated": "False"
                 })
 
+    _validate_dtags_derived(curr_dtag_list, dtags, derived)
     query._add_entities(dtag_list_name, new_dtags)
 
 
@@ -130,7 +131,53 @@ def record_data(exp_name, params, dtags, data):
     mark_dtags_updated(exp_name, dtags)
 
 
-def validate_record_params(params, dtags):
+def _validate_dtags_derived(curr_dtags, dtags, derived):
+    # Abort if recording to derived data category or deriving recorded data category
+    for curr_dtag in curr_dtags:
+        name_ = curr_dtag["name"]
+        derived_ = curr_dtag["derived"]
+
+        if name_ in dtags and derived_ != str(derived):
+            if derived_ == "True":
+                print("Error: recording to derived data category")
+            elif derived_ == "False":
+                print("Error: deriving directly recorded data category")
+            else:
+                print("Internal error: wrong derived value")
+            sys.exit(-1)
+
+
+
+def validate_dtags_derived(name, dtags, derived):
+    dtag_list_name = utils.mkup_dtag_list_name(name)
+
+    if not dtag_list_exists(dtag_list_name):
+        create_dtag_list(dtag_list_name)
+
+    curr_dtags = query._get_entities(dtag_list_name, {}, ["name", "derived"])
+    _validate_dtags_derived(curr_dtags, dtags, derived)
+
+
+def validate_dtags(name, dtags, derived):
+    # Validate dtag names
+    bad_values = ["*", "|", ",", "\""]
+    for dtag in dtags:
+        if dtag == "*":
+            print("Error: wildcard category is not allowed when recording")
+            sys.exit(-1)
+        elif not utils.is_dtag(dtag):
+            print("Internal error: wrong dtag format")
+            sys.exit(-1)
+
+        for bad_value in bad_values:
+            if bad_value in dtag:
+                print(f"Error: the name of a category cannot contain '{bad_value}'")
+                sys.exit(-1)
+
+    validate_dtags_derived(name, dtags, derived)
+
+
+def validate_record_params(exp_name, params, dtags):
     for key in params.keys():
         if utils.is_prohibited_name(key):
             print(f"Error: tag name cannot start with {tagit_prefix}")
@@ -147,21 +194,7 @@ def validate_record_params(params, dtags):
                 print(f"Error: the value of a tag cannot contain '{bad_value}'")
                 sys.exit(-1)
 
-    for dtag in dtags:
-        if dtag == "*":
-            print("Error: wildcard category is not allowed when recording")
-            sys.exit(-1)
-        elif not utils.is_dtag(dtag):
-            print("Internal error: wrong dtag format")
-            sys.exit(-1)
-
-        for bad_value in bad_values:
-            if bad_value in dtag:
-                print(f"Error: the name of a category cannot contain '{bad_value}'")
-                sys.exit(-1)
-
-    # TODO: Warn if explicitly using "raw" category; users may not aware of
-    # the existence of default "raw" category.
+    validate_dtags(exp_name, dtags, derived=False)
 
 
 def recorder(args):
@@ -170,13 +203,14 @@ def recorder(args):
     #   - this can be handled in command! its not our responsibility
     exp_name = args.exp_name
     param_str = args.tags
+    # TODO: FIX bug; split the string to list of arguments
     command = args.command
     stream = args.stream
     dtag_name_str = args.d
 
     params = utils.param_dict(param_str)
     dtags = utils.mkup_dtags(dtag_name_str)
-    validate_record_params(params, dtags)
+    validate_record_params(exp_name, params, dtags)
 
     if stream == "all":
         stdout = subprocess.PIPE
