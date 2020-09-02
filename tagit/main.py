@@ -203,11 +203,11 @@ def recorder(args):
     #   - this can be handled in command! its not our responsibility
     exp_name = args.exp_name
     param_str = args.tags
-    # TODO: FIX bug; split the string to list of arguments
-    command = args.command
+    command_args = args.command
     stream = args.stream
     dtag_name_str = args.d
 
+    command = utils.mkup_command(command_args)
     params = utils.param_dict(param_str)
     dtags = utils.mkup_dtags(dtag_name_str)
     validate_record_params(exp_name, params, dtags)
@@ -226,7 +226,8 @@ def recorder(args):
         sys.exit(-1)
 
     # TODO: Implement tee-like functionality
-    ret = subprocess.run(command, stdout=stdout, stderr=stderr, text=True)
+    ret = subprocess.run(command, stdout=stdout, stderr=stderr,
+            shell=True, text=True)
 
     ret_stdout = ret.stdout
     ret_stderr = ret.stderr

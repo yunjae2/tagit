@@ -99,3 +99,10 @@ def mkup_dtag_list_name(exp_name: str) -> str:
 
 def is_exp_name(table: str) -> bool:
     return not is_prohibited_name(table)
+
+
+def mkup_command(comm_args: []) -> str:
+    comm_str = ""
+    for arg in comm_args:
+        comm_str = comm_str + " " + arg
+    return comm_str
