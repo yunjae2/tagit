@@ -227,7 +227,7 @@ def _get_entities(table, conditions, cols):
     # 1. SELECT cluase
     sql = f"SELECT"
 
-    if not conditions:
+    if not cols:
         sql = sql + " *"
     else:
         first = True
@@ -386,6 +386,39 @@ def import_dump(filename):
     c.executescript(sql)
 
 
+def _append_row(table: str, conditions: {}, vals: {}):
+    # 1. UPDATE clause
+    sql = f"UPDATE {table}"
+
+    # 2. SET clause
+    sql = sql + " SET"
+    first = True
+    for key, value in vals.items():
+        if first:
+            first = False
+            sql = sql + f" {key} = {key} || '{value}'"
+        else:
+            sql = sql + f", {key} = {key} || '{value}'"
+
+    # 3. WHERE clause
+    first = True
+    for key, value in conditions.items():
+        if first:
+            first = False
+            sql = sql + f" WHERE {key} = '{value}'"
+        else:
+            sql = sql + f" AND {key} = '{value}'"
+
+    print(sql)
+
+    conn = create_connection(db_file)
+    c = conn.cursor()
+    # TODO: Handle error if the table does not exist
+    # TODO: Handle error if the columns do not match
+    c.execute(sql)
+    conn.commit()
+
+
 def _update_row(table: str, conditions: {}, vals: {}):
     # 1. UPDATE clause
     sql = f"UPDATE {table}"
@@ -401,14 +434,13 @@ def _update_row(table: str, conditions: {}, vals: {}):
             sql = sql + f", {key} = '{value}'"
 
     # 3. WHERE clause
-    sql = sql + " WHERE"
     first = True
     for key, value in conditions.items():
         if first:
             first = False
-            sql = sql + f" {key} = '{value}'"
+            sql = sql + f" WHERE {key} = '{value}'"
         else:
-            sql = sql + f", {key} = '{value}'"
+            sql = sql + f" AND {key} = '{value}'"
 
     conn = create_connection(db_file)
     c = conn.cursor()

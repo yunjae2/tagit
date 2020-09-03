@@ -473,6 +473,7 @@ def list_vars(exp_name):
 
 
 def list_dtags(exp_name):
+    # TODO: separate derived and not derived ones
     cols = query.get_columns(exp_name)
     dtags = [utils.dtag_name(x) for x in cols if utils.is_dtag(x)]
 
@@ -548,22 +549,130 @@ def add_parsing_rule(exp_name, rule, dtag_src, dtag_dest, append):
     query._add_entity(parser_name, params)
 
 
-def get_dtags_data(exp_name, params, dtags):
-    data = query.get_entities(exp_name, params, dtags)
-    dtag_data = []
+def build_parsing_graph(exp_name: str):
+    parser_name = utils.mkup_parser_name(exp_name)
+    if not parser_exists(parser_name):
+        return {}
 
-    for data_single in data:
-        dtag_data_single = OrderedDict((k, v) for (k, v) \
-                in data_single.items() if utils.is_dtag(k))
-        dtag_data.append(dtag_data_single)
+    graph = {}
+    rules = query._get_entities(parser_name, {}, [])
+    for rule in rules:
+        src = rule['src_dtag']
+        dest = rule['dest_dtag']
+        cmd = rule['rule']
+        edge = {'src': src, 'cmd': cmd}
 
-    return dtag_data
+        if dest in graph:
+            graph[dest].append(edge)
+        else:
+            graph[dest] = [edge]
+
+    return graph
+
+
+def get_dtag_status(exp_name: str):
+    dtag_list_name = utils.mkup_dtag_list_name(exp_name)
+    if not dtag_list_exists(dtag_list_name):
+        return []
+
+    curr_dtag_list = query._get_entities(dtag_list_name, {}, ["name", "updated"])
+    dtag_status = OrderedDict((x["name"], {"updated": x["updated"] == "True", \
+            "up-to-date": False}) for x in curr_dtag_list)
+
+    return dtag_status
+
+
+def parse_data(exp_name, src, dest, cmd, params, data):
+    if data is None:
+        return "\n"
+
+    ret = subprocess.run(cmd, input=data, capture_output=True,
+            shell=True, text=True)
+
+    ret_stdout = ret.stdout
+    ret_stderr = ret.stderr
+
+    if ret_stderr:
+        if ret_stderr.endswith('\n'):
+            ret_stderr = ret_stderr[:-1]
+        print(ret_stderr)
+
+    return ret_stdout
+
+
+def append_data(exp_name, params, dtag, new_data):
+    query._append_row(exp_name, params, {dtag: new_data})
+
+
+def run_parsing_rule(exp_name, src, dest, cmd):
+    records = query._get_entities(exp_name, {}, [])
+    for record in records:
+        data = record[src]
+        params = OrderedDict((k, v) for (k, v) in record.items() \
+                if not utils.is_prohibited_name(k))
+        parsed = parse_data(exp_name, src, dest, cmd, params, data)
+        append_data(exp_name, params, dest, parsed)
+
+
+def clear_dtag_data(exp_name, dtag):
+    query._update_row(exp_name, {}, {dtag: ""})
+
+
+def _run_backward_each_node(exp_name, graph, dtags, node):
+    # root sources
+    if node not in graph:
+        dtags[node]["up-to-date"] = True
+        return dtags[node]["updated"]
+
+    edges = graph[node]
+    need_update = False
+    for edge in edges:
+        src = edge["src"]
+        need_update |= _run_backward_each_node(exp_name, graph, dtags, src)
+
+    if need_update:
+        clear_dtag_data(exp_name, node)
+        for edge in edges:
+            src = edge["src"]
+            cmd = edge["cmd"]
+            run_parsing_rule(exp_name, src, node, cmd)
+
+    dtags[node]["up-to-date"] = True
+    return need_update
+
+
+def _run_backward_each_leaf(exp_name, graph, dtags, leaf):
+    _run_backward_each_node(exp_name, graph, dtags, leaf)
+
+
+def run_parsing_graph_backward(exp_name, graph, dtags):
+    if not graph or not dtags:
+        return
+
+    leaves = [x for x in dtags]
+    for dtag, edges in graph.items():
+        for edge in edges:
+            src = edge["src"]
+            leaves.remove(src)
+
+    for leaf in leaves:
+        _run_backward_each_leaf(exp_name, graph, dtags, leaf)
+
+
+def reset_dtag_status(exp_name: str, dtags):
+    dtag_list_name = utils.mkup_dtag_list_name(exp_name)
+    if not dtag_list_exists(dtag_list_name):
+        return
+
+    query._update_row(dtag_list_name, {}, {"updated": "False"})
 
 
 def run_parsing_graph(exp_name):
-    # TODO: Implement the body
-    # TODO: Reset 'updated' of each dtag to False
-    pass
+    parsing_graph = build_parsing_graph(exp_name)
+    dtag_status = get_dtag_status(exp_name)
+    run_parsing_graph_backward(exp_name, parsing_graph, dtag_status)
+    # Reset 'updated' of each dtag to False
+    reset_dtag_status(exp_name, dtag_status)
 
 
 def parse_adder(args):
@@ -620,6 +729,10 @@ def remove_all_rules(exp_name):
 
 
 def remove_rule(exp_name, rule_id):
+    # TODO: support multi-valued rule_id
+    if rule_id is None:
+        print("Error: no parsing rule id is provided")
+        sys.exit(-1)
     parser_name = utils.mkup_parser_name(exp_name)
     query._delete_rows(parser_name, OrderedDict([]), offset=rule_id, limit=1)
 
