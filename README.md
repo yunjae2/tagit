@@ -61,7 +61,7 @@ Each data may have multiple tags (e.g., "color=red, shape=sphere").
 
 
 ## Tutorial
-```
+```bash
 # 1. Record the data
 $ tagit record figures "color=red, shape=sphere, weight=10kg" -- echo "A red ball"
 A red ball
