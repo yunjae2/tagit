@@ -776,6 +776,24 @@ def parse_remover(args):
         remove_rule(exp_name, rule_id)
 
 
+def reset_all(yes: bool):
+    if not yes:
+        answer = input("Existing data will be deleted; reset? [y/N]: ")
+        if answer.strip().lower() != "y":
+            return
+
+    print("Resetting...")
+    if os.path.exists(db_file):
+        os.remove(db_file)
+
+    print("Reset done")
+
+
+def resetter(args):
+    yes = args.y
+    reset_all(yes)
+
+
 def parse_args():
     # TODO: Implement the body
     parser = argparse.ArgumentParser()
@@ -791,7 +809,7 @@ def parse_args():
             help='command to execute')
     rec_parser.add_argument('-s', '--stream', type=str, default='all',
             metavar='stream', choices=['stdout', 'stderr', 'all'],
-            help='output stream to record')
+            help='output stream to record (choose from: stdout, stderr, all)')
     rec_parser.add_argument('-d', type=str, metavar='category', default='raw',
             help='data category to record into (not required in general cases)')
     rec_parser.set_defaults(worker=recorder)
@@ -877,6 +895,12 @@ def parse_args():
     exp_parser.add_argument('output_dump', type=str,
             help='output file name to dump')
     exp_parser.set_defaults(worker=exporter)
+
+    # Reset command
+    reset_parser = subparsers.add_parser('reset', help='reset tagit')
+    reset_parser.add_argument('-y', action="store_true",
+            help='Automatic yes to prompts')
+    reset_parser.set_defaults(worker=resetter)
 
     args = parser.parse_args()
 
