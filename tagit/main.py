@@ -543,10 +543,10 @@ def parser_exists(parser_name) -> bool:
 
 
 def create_parser(parser_name):
-    query.create_table(parser_name, ["rule", "src_dtag", "dest_dtag", "append"])
+    query.create_table(parser_name, ["rule", "src_dtag", "dest_dtag"])
 
 
-def add_parsing_rule(exp_name, rule, dtag_src, dtag_dest, append):
+def add_parsing_rule(exp_name, rule, dtag_src, dtag_dest):
     parser_name = utils.mkup_parser_name(exp_name)
 
     # Create parser for the experiment if it has not been created yet
@@ -556,8 +556,7 @@ def add_parsing_rule(exp_name, rule, dtag_src, dtag_dest, append):
     params = OrderedDict([
         ("rule", rule),
         ("src_dtag", dtag_src),
-        ("dest_dtag", dtag_dest),
-        ("append", append)
+        ("dest_dtag", dtag_dest)
         ])
     query._add_entity(parser_name, params)
 
@@ -694,7 +693,6 @@ def parse_adder(args):
     rule = args.rule
     dtag_name_dest = args.dest
     dtag_name_src = args.src
-    append = args.append
 
     dtag_dest = utils.mkup_dtag(dtag_name_dest)
     dtag_src = utils.mkup_dtag(dtag_name_src)
@@ -705,7 +703,7 @@ def parse_adder(args):
     update_dtags(exp_name, [dtag_dest], derived=True)
 
     # Add parsing rule to experiment
-    rule_id = add_parsing_rule(exp_name, rule, dtag_src, dtag_dest, append)
+    rule_id = add_parsing_rule(exp_name, rule, dtag_src, dtag_dest)
 
 
 def list_rules(exp_name):
@@ -716,7 +714,7 @@ def list_rules(exp_name):
     else:
         data = []
 
-    headers = ["rule", "src", "dest", "append"]
+    headers = ["rule", "src", "dest"]
 
     values = []
     for data_single in data:
@@ -826,8 +824,6 @@ def parse_args():
             help='parsing rule (e.g., "awk /^latency/{print $NF}")')
     par_add_parser.add_argument('-s', '--src', type=str, metavar='src',
             default='raw', help='source data category to parse')
-    par_add_parser.add_argument('-a', '--append', action='store_true',
-            help='append output to target data category')
     par_add_parser.set_defaults(worker=parse_adder)
 
     # Parse list command
