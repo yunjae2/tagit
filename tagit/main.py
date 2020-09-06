@@ -666,7 +666,8 @@ def run_parsing_graph_backward(exp_name, graph, dtags):
     for dtag, edges in graph.items():
         for edge in edges:
             src = edge["src"]
-            leaves.remove(src)
+            if src in leaves:
+                leaves.remove(src)
 
     for leaf in leaves:
         _run_backward_each_leaf(exp_name, graph, dtags, leaf)
