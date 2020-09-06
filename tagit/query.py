@@ -396,8 +396,6 @@ def _append_row(table: str, conditions: {}, vals: {}):
         else:
             sql = sql + f" AND {key} = '{value}'"
 
-    print(sql)
-
     conn = create_connection(db_file)
     c = conn.cursor()
     # TODO: Handle error if the table does not exist
