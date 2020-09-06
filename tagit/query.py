@@ -196,9 +196,9 @@ def get_entities(name, params, dtags):
         for value in mvalue:
             if first_val:
                 first_val = False
-                sql = sql + f"{key} = {value}"
+                sql = sql + f"{key} = '{value}'"
             else:
-                sql = sql + f" OR {key} = {value}"
+                sql = sql + f" OR {key} = '{value}'"
         sql = sql + ")"
 
     c.execute(sql)
@@ -256,9 +256,9 @@ def _get_entities(table, conditions, cols):
         for value in mvalue:
             if first_val:
                 first_val = False
-                sql = sql + f"{key} = {value}"
+                sql = sql + f"{key} = '{value}'"
             else:
-                sql = sql + f" OR {key} = {value}"
+                sql = sql + f" OR {key} = '{value}'"
         sql = sql + ")"
 
     conn = create_connection(db_file)
@@ -308,9 +308,9 @@ def delete_rows(name: str, params: OrderedDict()):
         for value in mvalue:
             if first_val:
                 first_val = False
-                sql = sql + f"{key} = {value}"
+                sql = sql + f"{key} = '{value}'"
             else:
-                sql = sql + f" OR {key} = {value}"
+                sql = sql + f" OR {key} = '{value}'"
         sql = sql + ")"
 
     # TODO: Handle error if the table does not exist
@@ -340,9 +340,9 @@ def _delete_rows(table: str, conditions: OrderedDict(), limit=None, offset=0):
         for value in mvalue:
             if first_val:
                 first_val = False
-                sql = sql + f"{key} = {value}"
+                sql = sql + f"{key} = '{value}'"
             else:
-                sql = sql + f" OR {key} = {value}"
+                sql = sql + f" OR {key} = '{value}'"
         sql = sql + ")"
 
 
