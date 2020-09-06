@@ -497,9 +497,9 @@ def lister(args):
         list_exps()
 
 
-def load_dump(filename):
+def load_dump(filename, yes):
     exps = get_exps()
-    if exps:
+    if exps and not yes:
         answer = input("Existing records will be deleted; import? [y/N]: ")
         if answer.strip().lower() != "y":
             return
@@ -515,7 +515,9 @@ def load_dump(filename):
 
 def importer(args):
     filename = args.db_dump
-    load_dump(filename)
+    yes = args.y
+
+    load_dump(filename, yes)
 
 
 def dump_all(filename):
@@ -865,6 +867,8 @@ def parse_args():
     imp_parser = subparsers.add_parser('import', help='import data')
     imp_parser.add_argument('db_dump', type=str,
             help='input dump file')
+    imp_parser.add_argument('-y', action="store_true",
+            help='Automatic yes to prompts')
     # TODO: Import from csv / file hierarchy
     imp_parser.set_defaults(worker=importer)
 
