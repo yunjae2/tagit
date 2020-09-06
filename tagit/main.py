@@ -330,6 +330,9 @@ def report_std(exp_name: str, params: OrderedDict, data: []):
         for key in dtag_data:
             dtag_name = utils.dtag_name(key)
             value = dtag_data[key]
+            if value.endswith("\n"):
+                value = value[:-1]
+
             if first:
                 first = False
                 data_string = data_string + f"- {dtag_name}: {value}"
