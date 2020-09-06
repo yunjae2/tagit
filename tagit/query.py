@@ -4,11 +4,11 @@ import sqlite3
 import os
 from collections import OrderedDict
 
-db_file = os.path.join(os.path.expanduser("~"), ".tagit", "tagit.db")
-
 
 def create_connection(db_file):
-    os.makedirs(os.path.dirname(db_file), exist_ok=True)
+    dirname = os.path.dirname(db_file)
+    if dirname:
+        os.makedirs(dirname, exist_ok=True)
     try:
         conn = sqlite3.connect(db_file)
         return conn
@@ -369,21 +369,8 @@ def get_tables() -> []:
 
 def dump_db(filename):
     conn = create_connection(db_file)
-    c = conn.cursor()
-
-    with open(filename, 'w') as f:
-        for line in conn.iterdump():
-            f.write(f"{line}\n")
-
-
-def import_dump(filename):
-    conn = create_connection(db_file)
-    c = conn.cursor()
-
-    with open(filename, 'r') as f:
-        sql = f.read()
-
-    c.executescript(sql)
+    backup_conn = create_connection(filename)
+    conn.backup(backup_conn)
 
 
 def _append_row(table: str, conditions: {}, vals: {}):

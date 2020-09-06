@@ -6,6 +6,7 @@ import os
 import sys
 import argparse
 import csv
+import shutil
 from tabulate import tabulate
 from collections import OrderedDict
 
@@ -496,13 +497,25 @@ def lister(args):
         list_exps()
 
 
-def import_dump(filename):
-    query.import_dump(filename)
+def load_dump(filename):
+    exps = get_exps()
+    if exps:
+        answer = input("Existing records will be deleted; import? [y/N]: ")
+        if answer.strip().lower() != "y":
+            return
+
+    print("Importing...")
+    dirname = os.path.dirname(db_file)
+    if dirname:
+        os.makedirs(dirname, exist_ok=True)
+    shutil.copyfile(filename, db_file)
+
+    print("Import done")
 
 
 def importer(args):
     filename = args.db_dump
-    import_dump(filename)
+    load_dump(filename)
 
 
 def dump_all(filename):
@@ -841,14 +854,14 @@ def parse_args():
     # Import command
     imp_parser = subparsers.add_parser('import', help='import data')
     imp_parser.add_argument('db_dump', type=str,
-            help='input dump file (format: sql script)')
+            help='input dump file')
     # TODO: Import from csv / file hierarchy
     imp_parser.set_defaults(worker=importer)
 
     # Export command
     exp_parser = subparsers.add_parser('export', help='export data')
     exp_parser.add_argument('output_dump', type=str,
-            help='output file name to dump (format: sql script)')
+            help='output file name to dump')
     exp_parser.set_defaults(worker=exporter)
 
     args = parser.parse_args()

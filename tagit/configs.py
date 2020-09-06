@@ -1,3 +1,5 @@
+import os
+
 # Used for the raw data and data categories
 # Also acts like the default dtag
 tagit_prefix = "_tagit_"
@@ -8,3 +10,6 @@ default_dtag = dtag_prefix + "raw"
 parser_prefix = tagit_prefix + "parser_"
 
 dtag_list_prefix = tagit_prefix + "dtag_list_"
+
+# SQLite3
+db_file = os.path.join(os.path.expanduser("~"), ".tagit", "tagit.db")
