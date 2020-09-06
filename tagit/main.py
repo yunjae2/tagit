@@ -543,7 +543,7 @@ def parser_exists(parser_name) -> bool:
 
 
 def create_parser(parser_name):
-    query.create_table(parser_name, ["rule", "src_dtag", "dest_dtag"])
+    query.create_table(parser_name, ["rule", "src_dtag", "dest_dtag", "updated"])
 
 
 def add_parsing_rule(exp_name, rule, dtag_src, dtag_dest):
@@ -556,7 +556,8 @@ def add_parsing_rule(exp_name, rule, dtag_src, dtag_dest):
     params = OrderedDict([
         ("rule", rule),
         ("src_dtag", dtag_src),
-        ("dest_dtag", dtag_dest)
+        ("dest_dtag", dtag_dest),
+        ("updated", "True")
         ])
     query._add_entity(parser_name, params)
 
@@ -572,7 +573,8 @@ def build_parsing_graph(exp_name: str):
         src = rule['src_dtag']
         dest = rule['dest_dtag']
         cmd = rule['rule']
-        edge = {'src': src, 'cmd': cmd}
+        updated = rule['updated']
+        edge = {'src': src, 'cmd': cmd, 'updated': updated}
 
         if dest in graph:
             graph[dest].append(edge)
@@ -640,6 +642,8 @@ def _run_backward_each_node(exp_name, graph, dtags, node):
     need_update = False
     for edge in edges:
         src = edge["src"]
+        rule_updated = (edge["updated"] == "True")
+        need_update |= rule_updated
         need_update |= _run_backward_each_node(exp_name, graph, dtags, src)
 
     if need_update:
@@ -672,7 +676,7 @@ def run_parsing_graph_backward(exp_name, graph, dtags):
         _run_backward_each_leaf(exp_name, graph, dtags, leaf)
 
 
-def reset_dtag_status(exp_name: str, dtags):
+def reset_dtag_status(exp_name: str):
     dtag_list_name = utils.mkup_dtag_list_name(exp_name)
     if not dtag_list_exists(dtag_list_name):
         return
@@ -680,12 +684,21 @@ def reset_dtag_status(exp_name: str, dtags):
     query._update_row(dtag_list_name, {}, {"updated": "False"})
 
 
+def reset_rule_status(exp_name: str):
+    parser_name = utils.mkup_parser_name(exp_name)
+    if not parser_exists(parser_name):
+        return
+
+    query._update_row(parser_name, {}, {"updated": "False"})
+
+
 def run_parsing_graph(exp_name):
     parsing_graph = build_parsing_graph(exp_name)
     dtag_status = get_dtag_status(exp_name)
     run_parsing_graph_backward(exp_name, parsing_graph, dtag_status)
     # Reset 'updated' of each dtag to False
-    reset_dtag_status(exp_name, dtag_status)
+    reset_dtag_status(exp_name)
+    reset_rule_status(exp_name)
 
 
 def parse_adder(args):
@@ -714,7 +727,7 @@ def list_rules(exp_name):
     else:
         data = []
 
-    headers = ["rule", "src", "dest"]
+    headers = ["rule", "src", "dest", "updated"]
 
     values = []
     for data_single in data:
