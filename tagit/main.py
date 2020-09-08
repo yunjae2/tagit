@@ -459,7 +459,7 @@ def manager(args):
 
     elif delete_param_str:
         params = utils.param_dict(delete_param_str)
-        validate_params(exp_name, params)
+        validate_params(exp_name, params, [])
         delete_data(exp_name, params)
 
 
