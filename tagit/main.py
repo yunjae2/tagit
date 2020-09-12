@@ -292,7 +292,8 @@ def report_hrchy(exp_name: str, params: OrderedDict, data: [], path: str):
 
         base_path = os.path.join(path, f"{exp_name}")
         for key, value in tag_data.items():
-            base_path = os.path.join(base_path, f"{key}-{value}")
+            base_path = os.path.join(base_path, f"{key}")
+            base_path = os.path.join(base_path, f"{value}")
 
         for key, value in dtag_data.items():
             if value is None:
