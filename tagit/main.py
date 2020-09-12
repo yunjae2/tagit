@@ -735,7 +735,7 @@ def list_rules(exp_name):
     else:
         data = []
 
-    headers = ["rule", "src", "dest", "updated"]
+    headers = ["id", "rule", "src", "dest", "updated"]
 
     values = []
     for data_single in data:
