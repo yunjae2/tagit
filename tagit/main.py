@@ -718,7 +718,9 @@ def parse_adder(args):
     dtag_dest = utils.mkup_dtag(dtag_name_dest)
     dtag_src = utils.mkup_dtag(dtag_name_src)
 
-    check_exp_exists(exp_name)
+    if not exp_exists(exp_name):
+        create_exp(exp_name)
+
     validate_src_dtag(exp_name, dtag_src)
 
     update_dtags(exp_name, [dtag_dest], derived=True)
