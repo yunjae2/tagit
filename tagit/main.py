@@ -140,9 +140,9 @@ def _validate_dtags_derived(curr_dtags, dtags, derived):
 
         if name_ in dtags and derived_ != str(derived):
             if derived_ == "True":
-                print("Error: recording to derived data category")
+                print("Error: recording to a derived data category")
             elif derived_ == "False":
-                print("Error: deriving directly recorded data category")
+                print("Error: deriving a recorded data category directly")
             else:
                 print("Internal error: wrong derived value")
             sys.exit(-1)
