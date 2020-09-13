@@ -6,6 +6,7 @@ researchers' waste of time on arranging / manipulating / moving the experimental
 ### Core functionality
 * Record shell command output with tags.
 * Report data with specified tags in various format (terminal, csv file, and hierarchical files).
+* Parse recorded data automatically.
 * List tags.
 * Import/export data dump between systems.
 
@@ -114,19 +115,22 @@ $ tagit list
 ### Main commands
 #### 1. `record`
 ```
-$ tagit record <exp_name> <tags> -- <command>
+$ tagit record <exp_name> <tags> [-s <stream>] [-d <data_category>] -- <command>
 ```
 Records the output of `<command>` tagged with `<tags>` in `<exp_name>` space.
-`<tags>` must be specified with double quotes (e.g., `$ tagit record myexp "a=1, b=2", -- ./run_exp.sh`)
+`<tags>` must be specified with double quotes (e.g., `$ tagit record myexp "a=1, b=2", -- ./run_exp.sh`).
+The data category into which data is recorded can be specified using `-d` option; the default category is `raw`.
+`-s` option is for choosing the stream to record (`stdout, stderr, all (default)`).
 
 
 #### 2. `report`
 ```
-$ tagit report [-c <csv_file>] [-f <path>] <exp_name> [<tags>]
+$ tagit report <exp_name> [<tags>] [-c <csv_file>] [-f <path>] [-d <data_category>]
 ```
 Reports the data in `<exp_name>` space.
 If <tags> are specified, tagit reports data corresponding to the specified tags.
 By default, the result is printed in terminal.
+Data category to be reported can be specified using `-d` option, and all data categories are reported by default. 
   
 * Multi-valued tags
   - Users can choose multiple tag values at a time using the operator `|`.
@@ -140,9 +144,32 @@ By default, the result is printed in terminal.
 * Result format options
   - `-c`: Print the result in csv format
   - `-f`: Print the result in file hierarchy; each data is saved as a file under the nested directory path, where each directory corresponds to a tag
+  
+  
+#### 3. `parse`
+##### 3.1. `parse add`
+```
+$ tagit parse add <exp_name> [-s <src_category>] <dest_category> <rule>
+```
+Add a parsing rule to an experiment `<exp_name>`.
+For each data in experiment `<exp_name>`, `<rule>` is applied to `raw` category, and the result is saved in `<dest_category>`.
+If `<src_category>` is specified, the `<rule>` is applied to `<src_category>`.
+The `<rule>` should follow shell command format (For example: `awk '^latency/{print \$NF}'`).
 
+##### 3.2. `parse list`
+```
+$ tagit parse list <exp_name>
+```
+List parsing rules in the experiment `<exp_name>`.
 
-#### 3. `manage`
+##### 3.3. `parse remove`
+```
+$ tagit parse remove <exp_name> [-a] [<rule_id>]
+```
+Remove parsing rule of id `<rule_id>:` from the experiment `<exp_name>`.
+If `-a` is specified, all parsing rules are removed.
+
+#### 4. `manage`
 ```
 $ tagit manage [-d] [-r [<tags>]] <exp_name>
 ```
@@ -153,28 +180,36 @@ Manages recorded data in <exp_name> space.
   - `-r`: Delete data corresponding to the specified tags in an experiment.
   This does not delete an experiment, even though every data is deleted.
 
+
 ### Other commands
 #### 1. `list`
 ```
 $ tagit list [<exp_name>]
 ```
-List the experiments. If `<exp_name>` is specified, it lists the name of tags in the specified experiment instead.
+List the experiments. If `<exp_name>` is specified, it lists the name of tags and data categories in the specified experiment instead.
 
 
 #### 2. `export`
 ```
 $ tagit export <output_dump>
 ```
-Export all experiment and data to `<output_dump>` in the format of sql script.
+Export all experiment and data to `<output_dump>`.
 
 
 #### 3. `import`
 ```
 $ tagit import <db_dump>
 ```
-Import experiments and data from `<db_dump>`. `<db_dump>` must be a sql script.
+Import experiments and data from `<db_dump>`.
+
+
+#### 4. `reset`
+```
+$ tagit reset [-y]
+```
+Reset tagit database. `-y` passes all yes to prompts automatically.
 
 
 ## Notes
 This tools is currently alpha version and may contain lots of bugs.
-Issues / pull requests about new features, bug reports are appreciated.
+Issues & pull requests about new features, bug reports are appreciated.
