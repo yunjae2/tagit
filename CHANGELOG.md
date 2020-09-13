@@ -1,6 +1,18 @@
 # CHANGELOG
 
 
+## v0.0.5
+- Add data category
+- Add automatic parsing
+- Add stream option from which to record (stdout, stderr, all)
+- Add reset command
+- Change the import/export format
+- Change the hierarchical file report format
+- Establish the basic architecture (about 80%?)
+- Update README
+- Fix lots of bugs (including the one that commands not running correctly)
+
+
 ## v0.0.4
 - Add basic error handling
 - Add new experiment/tag notification
