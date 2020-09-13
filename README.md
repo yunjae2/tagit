@@ -64,47 +64,92 @@ Each data may have multiple tags (e.g., "color=red, shape=sphere").
 ## Tutorial
 ```bash
 # 1. Record the data
-$ tagit record figures "color=red, shape=sphere, weight=10kg" -- echo "A red ball"
-A red ball
+$ tagit record perf "storage=sata_ssd, mem=16GB" -- ./run_exp.sh
+IOPS is 20K
+latency is 100u
+New experiment: [perf]
+[perf] New tag added:
+- storage
+- mem
 
-$ tagit record figures "color=green, shape=sphere, weight=5kg" -- echo "A green ball"
-A green ball
+$ tagit record perf "storage=nvme_ssd, mem=16GB" -- ./run_exp.sh
+IOPS is 40K
+latency is 10us 
 
-$ tagit record figures "color=yellow, shape=cube, weight=10kg" -- echo "A yellow box"
-A yellow box
+$ tagit record perf "storage=nvme_ssd, mem=32GB" -- ./run_exp.sh
+IOPS is 60K
+latency is 10us 
+
 
 
 # 2. List experiments
 $ tagit list
-figures
+perf
 
 
 # 3. Report the data
-$ tagit report figures
-[figures] (color=red, shape=sphere, weight=10kg)
-A red ball
-[figures] (color=green, shape=sphere, weight=5kg)
-A green ball
-[figures] (color=yellow, shape=cube, weight=10kg)
-A yellow box
+$ tagit report perf
+[perf] (storage=sata_ssd, mem=16GB)
+- raw: IOPS is 20K
+latency is 100us
+[perf] (storage=nvme_ssd, mem=16GB)
+- raw: IOPS is 40K
+latency is 10us
+[perf] (storage=nvme_ssd, mem=32GB)
+- raw: IOPS is 60K
+latency is 10us
 
-$ tagit report tutorial "shape=sphere, weight, color"
+$ tagit report tutorial "mem=16GB, storage"
 [figures] (shape=sphere, weight=10kg, color=red)
-A red ball
-[figures] (shape=sphere, weight=5kg, color=green)
-A green ball
+[perf] (mem=16GB, storage=sata_ssd)
+- raw: IOPS is 20K
+latency is 100us
+[perf] (mem=16GB, storage=nvme_ssd)
+- raw: IOPS is 40K
+latency is 10us
 
 
-# 4. Delete a data
-$ tagit manage figures -r "weight=10kg"
+# 4. Parse recorded data
+$ tagit parse add perf iops "awk '/^IOPS/{print \$NF}'"
+[perf] New data category:
+- iops
 
-$ tagit report figures
-[figures] (color=green, shape=sphere, weight=5kg)
-A green ball
+$ tagit parse add perf latency "awk '/^latency/{print \$NF}'"
+[perf] New data category:
+- latency
+
+$ tagit parse list perf
+  id  rule                         src    dest     updated
+----  ---------------------------  -----  -------  ---------
+   0  awk '/^IOPS/{print $NF}'     raw    iops     True
+   1  awk '/^latency/{print $NF}'  raw    latency  True
+
+$ tagit report perf -d "latency, iops"
+[perf] (storage=sata_ssd, mem=16GB)
+- latency: 100us
+- iops: 20K
+[perf] (storage=nvme_ssd, mem=16GB)
+- latency: 10us
+- iops: 40K
+[perf] (storage=nvme_ssd, mem=32GB)
+- latency: 10us
+- iops: 60K
 
 
-# 5. Delete an experiment
-$ tagit manage figures -d
+# 5. Delete a data
+$ tagit manage perf -r "mem=32GB"
+
+$ tagit report perf -d "latency, iops"
+[perf] (storage=sata_ssd, mem=16GB)
+- latency: 100us
+- iops: 20K
+[perf] (storage=nvme_ssd, mem=16GB)
+- latency: 10us
+- iops: 40K
+
+
+# 6. Delete an experiment
+$ tagit manage perf -d
 
 $ tagit list
 
