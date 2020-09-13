@@ -48,7 +48,7 @@ However, Lisa now finds a serious problem: what does '8' mean in the directory p
 
 
 ## Basic concepts
-`tagit` has three main concepts: experiments, tags, and data.
+`tagit` has five main concepts: experiments, tags, data, data categories, and parsing rules.
 * An _experiment_ is a set of tagged data.
 Data in the same experiment commonly share a number of tags with different values.
 The name came from scientific methods,
@@ -58,7 +58,16 @@ it has a key and multiple values (e.g., "color=red", "color=yellow").
 Since it is quite common for tags to stick to the _optimal_ or _final_ value in experiments, 
 A tag may have the default value (coming soon!)
 * A _data_ is the element of `tagit`.
-Each data may have multiple tags (e.g., "color=red, shape=sphere").
+Each data belongs to a data category, and may have multiple tags (e.g., "color=red, shape=sphere").
+* A _data category_ describes the characteristic of the recorded data.
+It is similar to tag; however, it is used for parsing recorded data.
+When data is recorded, its category is `raw` by default,
+and the data can be parsed and saved into different categories (e.g., `throughput`, `latency`).
+Experimental results or stats are generally recorded in a single place (a simple example is `/proc/vmstat`, which shows the stats of virtual memory subsystem),
+thus data categories can be useful for parsing necessary information from the whole data.
+* A _parsing rule_ is applied to each recorded data in an experiment to parse it and generate useful data.
+The generated data is saved into the data category specified in the parsing rule.
+Once a parsing rule is registered in an experiment, it is automatically applied to data recorded in the future, as well as the data already recorded.
 
 
 ## Tutorial
@@ -66,7 +75,7 @@ Each data may have multiple tags (e.g., "color=red, shape=sphere").
 # 1. Record the data
 $ tagit record perf "storage=sata_ssd, mem=16GB" -- ./run_exp.sh
 IOPS is 20K
-latency is 100us
+latency is 100u
 New experiment: [perf]
 [perf] New tag added:
 - storage
@@ -152,7 +161,6 @@ $ tagit report perf -d "latency, iops"
 $ tagit manage perf -d
 
 $ tagit list
-
 
 ```
 
