@@ -66,7 +66,7 @@ Each data may have multiple tags (e.g., "color=red, shape=sphere").
 # 1. Record the data
 $ tagit record perf "storage=sata_ssd, mem=16GB" -- ./run_exp.sh
 IOPS is 20K
-latency is 100u
+latency is 100us
 New experiment: [perf]
 [perf] New tag added:
 - storage
@@ -152,6 +152,7 @@ $ tagit report perf -d "latency, iops"
 $ tagit manage perf -d
 
 $ tagit list
+
 
 ```
 
