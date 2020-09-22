@@ -227,8 +227,13 @@ def recorder(args):
         sys.exit(-1)
 
     # TODO: Implement tee-like functionality
-    ret = subprocess.run(command, stdout=stdout, stderr=stderr,
-            shell=True, text=True)
+    try:
+        ret = subprocess.run(command, stdout=stdout, stderr=stderr,
+                shell=True, text=True)
+    except TypeError:
+        # Python < 3.7
+        ret = subprocess.run(command, stdout=stdout, stderr=stderr,
+                shell=True, universal_newlines=True)
 
     ret_stdout = ret.stdout
     ret_stderr = ret.stderr
@@ -608,8 +613,13 @@ def parse_data(exp_name, src, dest, cmd, params, data):
     if data is None:
         return "\n"
 
-    ret = subprocess.run(cmd, input=data, capture_output=True,
-            shell=True, text=True)
+    try:
+        ret = subprocess.run(cmd, input=data, capture_output=True,
+                shell=True, text=True)
+    except TypeError:
+        # Python < 3.7
+        ret = subprocess.run(cmd, input=data, stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE, shell=True, universal_newlines=True)
 
     ret_stdout = ret.stdout
     ret_stderr = ret.stderr

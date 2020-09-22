@@ -2,6 +2,7 @@ from .configs import *
 from . import utils
 import sqlite3
 import os
+import sqlitebck
 from collections import OrderedDict
 
 
@@ -370,7 +371,11 @@ def get_tables() -> []:
 def dump_db(filename):
     conn = create_connection(db_file)
     backup_conn = create_connection(filename)
-    conn.backup(backup_conn)
+    try:
+        conn.backup(backup_conn)
+    except AttributeError:
+        # Python < 3.7
+        sqlitebck.copy(conn, backup_conn)
 
 
 def _append_row(table: str, conditions: {}, vals: {}):
