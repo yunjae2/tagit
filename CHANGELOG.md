@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## v0.0.6
+- Fix python 3.6 incompatibility bug
+
 
 ## v0.0.5
 - Add data category
