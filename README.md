@@ -82,7 +82,7 @@ Once a parsing rule is registered in an experiment, it is automatically applied 
 ## Tutorial
 ```bash
 # 1. Record the data
-$ tagit record perf "storage=sata_ssd, mem=16GB" -- ./run_exp.sh
+$ ./run_exp.sh | tagit record perf "storage=sata_ssd, mem=16GB"
 IOPS is 20K
 latency is 100u
 New experiment: [perf]
@@ -90,11 +90,11 @@ New experiment: [perf]
 - storage
 - mem
 
-$ tagit record perf "storage=nvme_ssd, mem=16GB" -- ./run_exp.sh
+$ ./run_exp.sh | tagit record perf "storage=nvme_ssd, mem=16GB"
 IOPS is 40K
 latency is 10us 
 
-$ tagit record perf "storage=nvme_ssd, mem=32GB" -- ./run_exp.sh
+$ ./run_exp.sh | tagit record perf "storage=nvme_ssd, mem=32GB"
 IOPS is 60K
 latency is 10us 
 
@@ -178,12 +178,12 @@ $ tagit list
 ### Main commands
 #### 1. `record`
 ```
-$ tagit record <exp_name> <tags> [-s <stream>] [-d <data_category>] -- <command>
+$ tagit record <exp_name> <tags> [-d <data_category>] [-q]
 ```
-Records the output of `<command>` tagged with `<tags>` in `<exp_name>` space.
-`<tags>` must be specified with double quotes (e.g., `$ tagit record myexp "a=1, b=2", -- ./run_exp.sh`).
+Records `stdin` tagged with `<tags>` in `<exp_name>` space.
+`<tags>` must be specified with double quotes (e.g., `$ ./run_exp.sh | tagit record myexp "a=1, b=2"`).
 The data category into which data is recorded can be specified using `-d` option; the default category is `raw`.
-`-s` option is for choosing the stream to record (`stdout, stderr, all (default)`).
+If `-q` is specified, data is recorded quietly.
 
 
 #### 2. `report`
@@ -191,7 +191,7 @@ The data category into which data is recorded can be specified using `-d` option
 $ tagit report <exp_name> [<tags>] [-c <csv_file>] [-f <path>] [-d <data_category>]
 ```
 Reports the data in `<exp_name>` space.
-If <tags> are specified, tagit reports data corresponding to the specified tags.
+If `<tags>` are specified, tagit reports data corresponding to the specified tags.
 By default, the result is printed in terminal.
 Data category to be reported can be specified using `-d` option, and all data categories are reported by default. 
   
