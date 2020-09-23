@@ -198,13 +198,22 @@ def validate_record_params(exp_name, params, dtags):
     validate_dtags(exp_name, dtags, derived=False)
 
 
-def get_from_stdin():
-    # TODO: Implement tee-like functionality
-    data = sys.stdin.read()
-    if data:
+def get_from_stdin(quiet: bool):
+    if quiet:
+        data = sys.stdin.read()
+        if data:
+            if data.endswith('\n'):
+                data = data[:-1]
+    else:
+        data = ''
+        for line in sys.stdin:
+            data = data + line
+            if line.endswith('\n'):
+                line = line[:-1]
+            print(line)
+
         if data.endswith('\n'):
             data = data[:-1]
-        print(data)
 
     return data
 
@@ -213,12 +222,13 @@ def recorder(args):
     exp_name = args.exp_name
     param_str = args.tags
     dtag_name_str = args.d
+    quiet = args.quiet
 
     params = utils.param_dict(param_str)
     dtags = utils.mkup_dtags(dtag_name_str)
     validate_record_params(exp_name, params, dtags)
 
-    data = get_from_stdin()
+    data = get_from_stdin(quiet)
 
     record_data(exp_name, params, dtags, data)
 
@@ -788,6 +798,8 @@ def parse_args():
             help='"tags" (e.g., "arch=gpt3, train_set=stack_overflow, test_set=quora")')
     rec_parser.add_argument('-d', type=str, metavar='category', default='raw',
             help='data category to record into (not required in general cases)')
+    rec_parser.add_argument('-q', '--quiet', action='store_true',
+            help='record data quietly')
     rec_parser.set_defaults(worker=recorder)
 
     # Report command
