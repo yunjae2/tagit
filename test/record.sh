@@ -91,4 +91,23 @@ then
 fi
 printf "passed\n"
 
+# 4. quietness test
+printf "quietness test.. "
+
+rm ~/.tagit/tagit.db
+
+quiet_gt=$'New experiment: [figure]
+[figure] New tag added:
+- color
+- shape
+- weight'
+quiet=$(echo "A red ball" | tagit record figure "color=red, shape=sphere, weight=10kg" -q)
+
+if [ "$quiet_gt" != "$quiet" ]
+then
+	printf "failed\n"
+	exit
+fi
+printf "passed\n"
+
 echo "Test passed"
