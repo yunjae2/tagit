@@ -26,6 +26,15 @@ The name of the script is the same as `tagit`, though.
 ```
 $ pip3 install etagit
 ```
+* Note: If you have python < 3.7, you should install sqlite3 development package that contains `sqlite3.h`. Otherwise, tagit may output some errors. Instruction for some distros is given below.
+  * Ubuntu/Debian  
+    ```
+    $ sudo apt install libsqlite3-dev
+    ```
+  * CentOS/Fedora/RHEL
+    ```
+    $ sudo yum install libsqlite3x-devel
+    ```
 
 
 ## An example: Lisa's story
