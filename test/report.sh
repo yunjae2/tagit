@@ -5,9 +5,9 @@ printf "Basic report test.. "
 
 rm ~/.tagit/tagit.db
 
-tagit record figure "color=red, shape=sphere, weight=10kg" -- "echo A red ball" > /dev/null
-tagit record figure "color=yellow, shape=cube, weight=10kg" -- "echo A yellow box" > /dev/null
-tagit record figure "color=green, shape=sphere, weight=5kg" -- "echo A green ball" > /dev/null
+echo "A red ball" | tagit record figure "color=red, shape=sphere, weight=10kg" > /dev/null
+echo "A yellow box" | tagit record figure "color=yellow, shape=cube, weight=10kg" > /dev/null
+echo "A green ball" | tagit record figure "color=green, shape=sphere, weight=5kg" > /dev/null
 
 report=$(tagit report figure)
 report_gt=$'[figure] (color=red, shape=sphere, weight=10kg)
@@ -29,9 +29,9 @@ printf "Multi-value tag test.. "
 
 rm ~/.tagit/tagit.db
 
-tagit record figure "color=red, shape=sphere, weight=10kg" -- "echo A red ball" > /dev/null
-tagit record figure "color=yellow, shape=cube, weight=10kg" -- "echo A yellow box" > /dev/null
-tagit record figure "color=green, shape=sphere, weight=5kg" -- "echo A green ball" > /dev/null
+echo "A red ball" | tagit record figure "color=red, shape=sphere, weight=10kg" > /dev/null
+echo "A yellow box" | tagit record figure "color=yellow, shape=cube, weight=10kg" > /dev/null
+echo "A green ball" | tagit record figure "color=green, shape=sphere, weight=5kg" > /dev/null
 
 report=$(tagit report figure "color=red|green")
 report_gt=$'[figure] (color=red, shape=sphere, weight=10kg)
@@ -51,9 +51,9 @@ printf "Data category test 1.. "
 
 rm ~/.tagit/tagit.db
 
-tagit record figure "color=red, shape=sphere, weight=10kg" -d result1 -- "echo A red ball" > /dev/null
-tagit record figure "color=yellow, shape=cube, weight=10kg" -d result2 -- "echo A yellow box" > /dev/null
-tagit record figure "color=green, shape=sphere, weight=5kg" -d result3 -- "echo A green ball" > /dev/null
+echo "A red ball" | tagit record figure "color=red, shape=sphere, weight=10kg" -d result1 > /dev/null
+echo "A yellow box" | tagit record figure "color=yellow, shape=cube, weight=10kg" -d result2 > /dev/null
+echo "A green ball" | tagit record figure "color=green, shape=sphere, weight=5kg" -d result3 > /dev/null
 
 report=$(tagit report figure)
 report_gt=$'[figure] (color=red, shape=sphere, weight=10kg)
@@ -79,14 +79,14 @@ then
 fi
 printf "passed\n"
 
-# 3. data category test (specific)
+# 3-2. data category test (specific)
 printf "Data category test 2.. "
 
 rm ~/.tagit/tagit.db
 
-tagit record figure "color=red, shape=sphere, weight=10kg" -d result1 -- "echo A red ball" > /dev/null
-tagit record figure "color=yellow, shape=cube, weight=10kg" -d result2 -- "echo A yellow box" > /dev/null
-tagit record figure "color=green, shape=sphere, weight=5kg" -d result3 -- "echo A green ball" > /dev/null
+echo "A red ball" | tagit record figure "color=red, shape=sphere, weight=10kg" -d result1 > /dev/null
+echo "A yellow box" | tagit record figure "color=yellow, shape=cube, weight=10kg" -d result2 > /dev/null
+echo "A green ball" | tagit record figure "color=green, shape=sphere, weight=5kg" -d result3 > /dev/null
 
 report=$(tagit report figure -d result2)
 report_gt=$'[figure] (color=red, shape=sphere, weight=10kg)
@@ -111,9 +111,9 @@ report_gt_csv="test_gt.csv"
 
 rm ~/.tagit/tagit.db
 
-tagit record figure "color=red, shape=sphere, weight=10kg" -d result1 -- "echo A red ball" > /dev/null
-tagit record figure "color=yellow, shape=cube, weight=10kg" -d result2 -- "echo A yellow box" > /dev/null
-tagit record figure "color=green, shape=sphere, weight=5kg" -d result3 -- "echo A green ball" > /dev/null
+echo "A red ball" | tagit record figure "color=red, shape=sphere, weight=10kg" -d result1 > /dev/null
+echo "A yellow box" | tagit record figure "color=yellow, shape=cube, weight=10kg" -d result2 > /dev/null
+echo "A green ball" | tagit record figure "color=green, shape=sphere, weight=5kg" -d result3 > /dev/null
 
 tagit report figure -c test.csv
 echo -e "color,shape,weight,raw,result1,result2,result3\r" > $report_gt_csv
@@ -138,9 +138,9 @@ report_gt_csv="test_gt.csv"
 
 rm ~/.tagit/tagit.db
 
-tagit record figure "color=red, shape=sphere, weight=10kg" -d result1 -- "echo A red ball" > /dev/null
-tagit record figure "color=yellow, shape=cube, weight=10kg" -d result2 -- "echo A yellow box" > /dev/null
-tagit record figure "color=green, shape=sphere, weight=5kg" -d result3 -- "echo A green ball" > /dev/null
+echo "A red ball" | tagit record figure "color=red, shape=sphere, weight=10kg" -d result1 > /dev/null
+echo "A yellow box" | tagit record figure "color=yellow, shape=cube, weight=10kg" -d result2 > /dev/null
+echo "A green ball" | tagit record figure "color=green, shape=sphere, weight=5kg" -d result3 > /dev/null
 
 tagit report figure -c test.csv -d result2
 echo -e "color,shape,weight,result2\r" > $report_gt_csv

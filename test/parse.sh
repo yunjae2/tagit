@@ -4,9 +4,9 @@
 printf "Basic parsing test 1.. "
 rm ~/.tagit/tagit.db
 
-tagit record perf "storage=sata_ssd, mem=16GB" -- "echo IOPS: 20K && echo latency: 100us" > /dev/null
-tagit record perf "storage=nvme_ssd, mem=16GB" -- "echo IOPS: 40K && echo latency: 10us" > /dev/null
-tagit record perf "storage=nvme_ssd, mem=32GB" -- "echo IOPS: 60K && echo latency: 10us" > /dev/null
+printf "IOPS: 20K\nlatency: 100us" | tagit record perf "storage=sata_ssd, mem=16GB" > /dev/null
+printf "IOPS: 40K\nlatency: 10us" | tagit record perf "storage=nvme_ssd, mem=16GB" > /dev/null
+printf "IOPS: 60K\nlatency: 10us" | tagit record perf "storage=nvme_ssd, mem=32GB" > /dev/null
 tagit parse add perf iops "awk '/^IOPS/{print \$NF}'" > /dev/null
 tagit parse add perf latency "awk '/^latency/{print \$NF}'" > /dev/null
 
@@ -38,9 +38,9 @@ printf "passed\n"
 printf "Basic parsing test 2.. "
 rm ~/.tagit/tagit.db
 
-tagit record perf "storage=sata_ssd, mem=16GB" -- "echo IOPS: 20K && echo latency: 100us" > /dev/null
-tagit record perf "storage=nvme_ssd, mem=16GB" -- "echo IOPS: 40K && echo latency: 10us" > /dev/null
-tagit record perf "storage=nvme_ssd, mem=32GB" -- "echo IOPS: 60K && echo latency: 10us" > /dev/null
+printf "IOPS: 20K\nlatency: 100us" | tagit record perf "storage=sata_ssd, mem=16GB" > /dev/null
+printf "IOPS: 40K\nlatency: 10us" | tagit record perf "storage=nvme_ssd, mem=16GB" > /dev/null
+printf "IOPS: 60K\nlatency: 10us" | tagit record perf "storage=nvme_ssd, mem=32GB" > /dev/null
 tagit parse add perf iops "awk '/^IOPS/{print \$NF}'" > /dev/null
 tagit parse add perf latency "awk '/^latency/{print \$NF}'" > /dev/null
 
@@ -66,12 +66,12 @@ printf "passed\n"
 printf "Order independency test.. "
 rm ~/.tagit/tagit.db
 
-tagit record perf "storage=sata_ssd, mem=16GB" -- "echo IOPS: 20K && echo latency: 100us" > /dev/null
+printf "IOPS: 20K\nlatency: 100us" | tagit record perf "storage=sata_ssd, mem=16GB" > /dev/null
 tagit parse add perf iops "awk '/^IOPS/{print \$NF}'" > /dev/null
 tagit report perf > /dev/null
-tagit record perf "storage=nvme_ssd, mem=16GB" -- "echo IOPS: 40K && echo latency: 10us" > /dev/null
+printf "IOPS: 40K\nlatency: 10us" | tagit record perf "storage=nvme_ssd, mem=16GB" > /dev/null
 tagit parse add perf latency "awk '/^latency/{print \$NF}'" > /dev/null
-tagit record perf "storage=nvme_ssd, mem=32GB" -- "echo IOPS: 60K && echo latency: 10us" > /dev/null
+printf "IOPS: 60K\nlatency: 10us" | tagit record perf "storage=nvme_ssd, mem=32GB" > /dev/null
 
 report=$(tagit report perf)
 report_gt=$'[perf] (storage=sata_ssd, mem=16GB)
@@ -101,7 +101,7 @@ printf "passed\n"
 printf "Conflict test 1.. "
 rm ~/.tagit/tagit.db
 
-tagit record perf "storage=sata_ssd, mem=16GB" -- "echo IOPS: 20K && echo latency: 100us" > /dev/null
+printf "IOPS: 20K\nlatency: 100us" | tagit record perf "storage=sata_ssd, mem=16GB" > /dev/null
 parse=$(tagit parse add perf raw "awk '/^IOPS/{print \$NF}'")
 parse_gt="Error: deriving a recorded data category directly"
 
@@ -117,7 +117,7 @@ printf "Conflict test 2.. "
 rm ~/.tagit/tagit.db
 
 tagit parse add perf iops "awk '/^IOPS/{print \$NF}'" > /dev/null
-parse=$(tagit record perf "storage=sata_ssd, mem=16GB" -d iops -- "echo 20K")
+parse=$(echo "20K"| tagit record perf "storage=sata_ssd, mem=16GB" -d iops)
 parse_gt="Error: recording to a derived data category"
 
 if [ "$parse_gt" != "$parse" ]
@@ -131,9 +131,9 @@ printf "passed\n"
 printf "List test.. "
 rm ~/.tagit/tagit.db
 
-tagit record perf "storage=sata_ssd, mem=16GB" -- "echo IOPS: 20K && echo latency: 100us" > /dev/null
-tagit record perf "storage=nvme_ssd, mem=16GB" -- "echo IOPS: 40K && echo latency: 10us" > /dev/null
-tagit record perf "storage=nvme_ssd, mem=32GB" -- "echo IOPS: 60K && echo latency: 10us" > /dev/null
+printf "IOPS: 20K\nlatency: 100us" | tagit record perf "storage=sata_ssd, mem=16GB" > /dev/null
+printf "IOPS: 40K\nlatency: 10us" | tagit record perf "storage=nvme_ssd, mem=16GB" > /dev/null
+printf "IOPS: 60K\nlatency: 10us" | tagit record perf "storage=nvme_ssd, mem=32GB" > /dev/null
 tagit parse add perf iops "awk '/^IOPS/{print \$NF}'" > /dev/null
 tagit parse add perf latency "awk '/^latency/{print \$NF}'" > /dev/null
 
@@ -152,9 +152,9 @@ printf "passed\n"
 printf "Remove test 1.. "
 rm ~/.tagit/tagit.db
 
-tagit record perf "storage=sata_ssd, mem=16GB" -- "echo IOPS: 20K && echo latency: 100us" > /dev/null
-tagit record perf "storage=nvme_ssd, mem=16GB" -- "echo IOPS: 40K && echo latency: 10us" > /dev/null
-tagit record perf "storage=nvme_ssd, mem=32GB" -- "echo IOPS: 60K && echo latency: 10us" > /dev/null
+printf "IOPS: 20K\nlatency: 100us" | tagit record perf "storage=sata_ssd, mem=16GB" > /dev/null
+printf "IOPS: 40K\nlatency: 10us" | tagit record perf "storage=nvme_ssd, mem=16GB" > /dev/null
+printf "IOPS: 60K\nlatency: 10us" | tagit record perf "storage=nvme_ssd, mem=32GB" > /dev/null
 tagit parse add perf iops "awk '/^IOPS/{print \$NF}'" > /dev/null
 tagit parse add perf latency "awk '/^latency/{print \$NF}'" > /dev/null
 
@@ -175,9 +175,9 @@ printf "passed\n"
 printf "Remove test 2.. "
 rm ~/.tagit/tagit.db
 
-tagit record perf "storage=sata_ssd, mem=16GB" -- "echo IOPS: 20K && echo latency: 100us" > /dev/null
-tagit record perf "storage=nvme_ssd, mem=16GB" -- "echo IOPS: 40K && echo latency: 10us" > /dev/null
-tagit record perf "storage=nvme_ssd, mem=32GB" -- "echo IOPS: 60K && echo latency: 10us" > /dev/null
+printf "IOPS: 20K\nlatency: 100us" | tagit record perf "storage=sata_ssd, mem=16GB" > /dev/null
+printf "IOPS: 40K\nlatency: 10us" | tagit record perf "storage=nvme_ssd, mem=16GB" > /dev/null
+printf "IOPS: 60K\nlatency: 10us" | tagit record perf "storage=nvme_ssd, mem=32GB" > /dev/null
 tagit parse add perf iops "awk '/^IOPS/{print \$NF}'" > /dev/null
 tagit parse add perf latency "awk '/^latency/{print \$NF}'" > /dev/null
 

@@ -5,9 +5,9 @@ printf "Basic test.. "
 
 rm ~/.tagit/tagit.db
 
-tagit record figure "color=red, shape=sphere, weight=10kg" -- "echo A red ball" > /dev/null
-tagit record figure "color=yellow, shape=cube, weight=10kg" -- "echo A yellow box" > /dev/null
-tagit record figure "color=green, shape=sphere, weight=5kg" -- "echo A green ball" > /dev/null
+echo "A red ball" | tagit record figure "color=red, shape=sphere, weight=10kg" > /dev/null
+echo "A yellow box" | tagit record figure "color=yellow, shape=cube, weight=10kg" > /dev/null
+echo "A green ball" | tagit record figure "color=green, shape=sphere, weight=5kg" > /dev/null
 
 figure_gt=$'[figure] (color=red, shape=sphere, weight=10kg)
 - raw: A red ball
@@ -31,12 +31,12 @@ printf "multi-experiment test.. "
 
 rm ~/.tagit/tagit.db
 
-tagit record figure "color=red, shape=sphere, weight=10kg" -- "echo A red ball" > /dev/null
-tagit record perf "storage=sata_ssd, mem=16GB" -- "echo A low-end machine" > /dev/null
-tagit record figure "color=yellow, shape=cube, weight=10kg" -- "echo A yellow box" > /dev/null
-tagit record perf "storage=nvme_ssd, mem=16GB" -- "echo A mid-end machine" > /dev/null
-tagit record figure "color=green, shape=sphere, weight=5kg" -- "echo A green ball" > /dev/null
-tagit record perf "storage=nvme_ssd, mem=32GB" -- "echo A high-end machine" > /dev/null
+echo "A red ball" | tagit record figure "color=red, shape=sphere, weight=10kg" > /dev/null
+echo "A low-end machine" | tagit record perf "storage=sata_ssd, mem=16GB" > /dev/null
+echo "A yellow box" | tagit record figure "color=yellow, shape=cube, weight=10kg" > /dev/null
+echo "A mid-end machine" | tagit record perf "storage=nvme_ssd, mem=16GB" > /dev/null
+echo "A green ball" | tagit record figure "color=green, shape=sphere, weight=5kg" > /dev/null
+echo "A high-end machine" | tagit record perf "storage=nvme_ssd, mem=32GB" > /dev/null
 
 figure_gt=$'[figure] (color=red, shape=sphere, weight=10kg)
 - raw: A red ball
@@ -68,65 +68,13 @@ fi
 printf "passed\n"
 
 
-# 3. stream test
-printf "stream test.. "
-
-# 3.1. stdout
-rm ~/.tagit/tagit.db
-
-tagit record -s stdout figure "color=red, shape=sphere, weight=10kg" -- "echo A red ball && >&2 echo err_msg" 2>&1 > /dev/null
-
-raw_gt=$'[figure] (color=red, shape=sphere, weight=10kg)
-- raw: A red ball'
-raw=$(tagit report figure)
-
-if [ "$raw_gt" != "$raw" ]
-then
-	printf "failed (stdout)\n"
-	exit
-fi
-
-# 3.2. stderr
-rm ~/.tagit/tagit.db
-
-tagit record -s stderr figure "color=red, shape=sphere, weight=10kg" -- "echo A red ball && >&2 echo err_msg" 2>&1 > /dev/null
-
-raw_gt=$'[figure] (color=red, shape=sphere, weight=10kg)
-- raw: err_msg'
-raw=$(tagit report figure)
-
-if [ "$raw_gt" != "$raw" ]
-then
-	printf "failed (stderr)\n"
-	exit
-fi
-
-# 3.3. all
-rm ~/.tagit/tagit.db
-
-tagit record -s all figure "color=red, shape=sphere, weight=10kg" -- "echo A red ball && >&2 echo err_msg" 2>&1 > /dev/null
-
-raw_gt=$'[figure] (color=red, shape=sphere, weight=10kg)
-- raw: A red ball
-err_msg'
-raw=$(tagit report figure)
-
-if [ "$raw_gt" != "$raw" ]
-then
-	printf "failed (all)\n"
-	exit
-fi
-
-printf "passed\n"
-
-
-# 4. category test
+# 3. category test
 printf "data category test.. "
 
 rm ~/.tagit/tagit.db
 
-tagit record -d raw figure "color=red, shape=sphere, weight=10kg" -- "echo A red ball" > /dev/null
-tagit record -d cat1 figure "color=yellow, shape=cube, weight=10kg" -- "echo A yellow box" > /dev/null
+echo "A red ball" | tagit record -d raw figure "color=red, shape=sphere, weight=10kg" > /dev/null
+echo "A yellow box" | tagit record -d cat1 figure "color=yellow, shape=cube, weight=10kg" > /dev/null
 
 cat_gt=$'[figure] (color=red, shape=sphere, weight=10kg)
 - raw: A red ball
