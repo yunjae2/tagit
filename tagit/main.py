@@ -209,19 +209,9 @@ def get_from_stdin():
     return data
 
 
-def run_command(command, stream):
-    if stream == "all":
-        stdout = subprocess.PIPE
-        stderr = subprocess.STDOUT
-    elif stream == "stdout":
-        stdout = subprocess.PIPE
-        stderr = subprocess.PIPE
-    elif stream == "stderr":
-        stdout = subprocess.PIPE
-        stderr = subprocess.PIPE
-    else:
-        print("Internal bug; wrong stream format")
-        sys.exit(-1)
+def run_command(command):
+    stdout = subprocess.PIPE
+    stderr = subprocess.PIPE
 
     # TODO: Implement tee-like functionality
     try:
@@ -244,16 +234,7 @@ def run_command(command, stream):
             ret_stderr = ret_stderr[:-1]
         print(ret_stderr)
 
-    if stream == "all":
-        data = ret_stdout
-    elif stream == "stdout":
-        data = ret_stdout
-    elif stream == "stderr":
-        data = ret_stderr
-    else:
-        print("Internal bug; wrong stream format")
-        sys.exit(-1)
-
+    data = ret_stdout
     return data
 
 
@@ -261,7 +242,6 @@ def recorder(args):
     exp_name = args.exp_name
     param_str = args.tags
     command_args = args.command
-    stream = args.stream
     dtag_name_str = args.d
 
     params = utils.param_dict(param_str)
@@ -272,7 +252,7 @@ def recorder(args):
         data = get_from_stdin()
     else:
         command = utils.mkup_command(command_args)
-        data = run_command(command, stream)
+        data = run_command(command)
 
     record_data(exp_name, params, dtags, data)
 
@@ -842,9 +822,6 @@ def parse_args():
             help='"tags" (e.g., "arch=gpt3, train_set=stack_overflow, test_set=quora")')
     rec_parser.add_argument('command', nargs='*', type=str,
             help='command to execute; if not specified, stdin is recorded')
-    rec_parser.add_argument('-s', '--stream', type=str, default='all',
-            metavar='stream', choices=['stdout', 'stderr', 'all'],
-            help='output stream to record (choose from: stdout, stderr, all)')
     rec_parser.add_argument('-d', type=str, metavar='category', default='raw',
             help='data category to record into (not required in general cases)')
     rec_parser.set_defaults(worker=recorder)
