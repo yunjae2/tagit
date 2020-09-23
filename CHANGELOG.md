@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## v0.0.7
+- Change record interface
+- Let data printed synchronously in terminal during recording
+- Add quiet record option
+- Remove stream option in record
+- Update README
+
+
 ## v0.0.6
 - Fix python 3.6 incompatibility bug
 
