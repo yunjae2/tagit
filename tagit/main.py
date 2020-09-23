@@ -198,21 +198,18 @@ def validate_record_params(exp_name, params, dtags):
     validate_dtags(exp_name, dtags, derived=False)
 
 
-def recorder(args):
-    # Features
-    # Filter using pattern?
-    #   - this can be handled in command! its not our responsibility
-    exp_name = args.exp_name
-    param_str = args.tags
-    command_args = args.command
-    stream = args.stream
-    dtag_name_str = args.d
+def get_from_stdin():
+    # TODO: Implement tee-like functionality
+    data = sys.stdin.read()
+    if data:
+        if data.endswith('\n'):
+            data = data[:-1]
+        print(data)
 
-    command = utils.mkup_command(command_args)
-    params = utils.param_dict(param_str)
-    dtags = utils.mkup_dtags(dtag_name_str)
-    validate_record_params(exp_name, params, dtags)
+    return data
 
+
+def run_command(command, stream):
     if stream == "all":
         stdout = subprocess.PIPE
         stderr = subprocess.STDOUT
@@ -256,6 +253,26 @@ def recorder(args):
     else:
         print("Internal bug; wrong stream format")
         sys.exit(-1)
+
+    return data
+
+
+def recorder(args):
+    exp_name = args.exp_name
+    param_str = args.tags
+    command_args = args.command
+    stream = args.stream
+    dtag_name_str = args.d
+
+    params = utils.param_dict(param_str)
+    dtags = utils.mkup_dtags(dtag_name_str)
+    validate_record_params(exp_name, params, dtags)
+
+    if not command_args:
+        data = get_from_stdin()
+    else:
+        command = utils.mkup_command(command_args)
+        data = run_command(command, stream)
 
     record_data(exp_name, params, dtags, data)
 
@@ -823,8 +840,8 @@ def parse_args():
     rec_parser.add_argument('exp_name', type=str, help='experiment name')
     rec_parser.add_argument('tags', type=str,
             help='"tags" (e.g., "arch=gpt3, train_set=stack_overflow, test_set=quora")')
-    rec_parser.add_argument('command', nargs='+', type=str,
-            help='command to execute')
+    rec_parser.add_argument('command', nargs='*', type=str,
+            help='command to execute; if not specified, stdin is recorded')
     rec_parser.add_argument('-s', '--stream', type=str, default='all',
             metavar='stream', choices=['stdout', 'stderr', 'all'],
             help='output stream to record (choose from: stdout, stderr, all)')
