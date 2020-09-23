@@ -209,50 +209,16 @@ def get_from_stdin():
     return data
 
 
-def run_command(command):
-    stdout = subprocess.PIPE
-    stderr = subprocess.PIPE
-
-    # TODO: Implement tee-like functionality
-    try:
-        ret = subprocess.run(command, stdout=stdout, stderr=stderr,
-                shell=True, text=True)
-    except TypeError:
-        # Python < 3.7
-        ret = subprocess.run(command, stdout=stdout, stderr=stderr,
-                shell=True, universal_newlines=True)
-
-    ret_stdout = ret.stdout
-    ret_stderr = ret.stderr
-
-    if ret_stdout:
-        if ret_stdout.endswith('\n'):
-            ret_stdout = ret_stdout[:-1]
-        print(ret_stdout)
-    if ret_stderr:
-        if ret_stderr.endswith('\n'):
-            ret_stderr = ret_stderr[:-1]
-        print(ret_stderr)
-
-    data = ret_stdout
-    return data
-
-
 def recorder(args):
     exp_name = args.exp_name
     param_str = args.tags
-    command_args = args.command
     dtag_name_str = args.d
 
     params = utils.param_dict(param_str)
     dtags = utils.mkup_dtags(dtag_name_str)
     validate_record_params(exp_name, params, dtags)
 
-    if not command_args:
-        data = get_from_stdin()
-    else:
-        command = utils.mkup_command(command_args)
-        data = run_command(command)
+    data = get_from_stdin()
 
     record_data(exp_name, params, dtags, data)
 
@@ -820,8 +786,6 @@ def parse_args():
     rec_parser.add_argument('exp_name', type=str, help='experiment name')
     rec_parser.add_argument('tags', type=str,
             help='"tags" (e.g., "arch=gpt3, train_set=stack_overflow, test_set=quora")')
-    rec_parser.add_argument('command', nargs='*', type=str,
-            help='command to execute; if not specified, stdin is recorded')
     rec_parser.add_argument('-d', type=str, metavar='category', default='raw',
             help='data category to record into (not required in general cases)')
     rec_parser.set_defaults(worker=recorder)
