@@ -26,7 +26,7 @@ perf'
 if [ "$list_gt" != "$list" ]
 then
 	printf "failed\n"
-	exit
+	exit 1
 fi
 printf "passed\n"
 
@@ -47,7 +47,7 @@ list_gt=$'[figure] List of tags:
 if [ "$list_gt" != "$list" ]
 then
 	printf "failed\n"
-	exit
+	exit 1
 fi
 printf "passed\n"
 

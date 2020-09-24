@@ -20,7 +20,7 @@ report_gt=$'[figure] (color=red, shape=sphere, weight=10kg)
 if [ "$report_gt" != "$report" ]
 then
 	printf "failed\n"
-	exit
+	exit 1
 fi
 printf "passed\n"
 
@@ -42,7 +42,7 @@ report_gt=$'[figure] (color=red, shape=sphere, weight=10kg)
 if [ "$report_gt" != "$report" ]
 then
 	printf "failed\n"
-	exit
+	exit 1
 fi
 printf "passed\n"
 
@@ -75,7 +75,7 @@ report_gt=$'[figure] (color=red, shape=sphere, weight=10kg)
 if [ "$report_gt" != "$report" ]
 then
 	printf "failed\n"
-	exit
+	exit 1
 fi
 printf "passed\n"
 
@@ -99,7 +99,7 @@ report_gt=$'[figure] (color=red, shape=sphere, weight=10kg)
 if [ "$report_gt" != "$report" ]
 then
 	printf "failed\n"
-	exit
+	exit 1
 fi
 printf "passed\n"
 
@@ -126,7 +126,7 @@ rm $report_csv $report_gt_csv
 if [ "$is_diff" != "" ]
 then
 	printf "failed\n"
-	exit
+	exit 1
 fi
 printf "passed\n"
 
@@ -153,7 +153,7 @@ rm $report_csv $report_gt_csv
 if [ "$is_diff" != "" ]
 then
 	printf "failed\n"
-	exit
+	exit 1
 fi
 printf "passed\n"
 

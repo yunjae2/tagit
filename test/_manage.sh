@@ -19,7 +19,7 @@ report_gt=$'[figure] (color=yellow, shape=cube, weight=10kg)
 if [ "$report_gt" != "$report" ]
 then
 	printf "failed\n"
-	exit
+	exit 1
 fi
 printf "passed\n"
 
@@ -42,7 +42,7 @@ report_gt=$'[figure] (color=yellow, shape=cube, weight=10kg)
 if [ "$report_gt" != "$report" ]
 then
 	printf "failed\n"
-	exit
+	exit 1
 fi
 printf "passed\n"
 
@@ -63,7 +63,7 @@ report_gt=$'[figure] (color=green, shape=sphere, weight=5kg)
 if [ "$report_gt" != "$report" ]
 then
 	printf "failed\n"
-	exit
+	exit 1
 fi
 printf "passed\n"
 
@@ -84,7 +84,7 @@ report_gt=$'[figure] (color=green, shape=sphere, weight=5kg)
 if [ "$report_gt" != "$report" ]
 then
 	printf "failed\n"
-	exit
+	exit 1
 fi
 printf "passed\n"
 
@@ -106,7 +106,7 @@ List of experiments:'
 if [ "$report_gt" != "$report" ]
 then
 	printf "failed\n"
-	exit
+	exit 1
 fi
 printf "passed\n"
 

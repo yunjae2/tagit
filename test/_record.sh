@@ -21,7 +21,7 @@ figure=$(tagit report figure)
 if [ "$figure_gt" != "$figure" ]
 then
 	printf "failed\n"
-	exit
+	exit 1
 fi
 printf "passed\n"
 
@@ -58,12 +58,12 @@ perf=$(tagit report perf)
 if [ "$figure_gt" != "$figure" ]
 then
 	printf "failed\n"
-	exit
+	exit 1
 fi
 if [ "$perf_gt" != "$perf" ]
 then
 	printf "failed\n"
-	exit
+	exit 1
 fi
 printf "passed\n"
 
@@ -87,9 +87,10 @@ cat=$(tagit report figure)
 if [ "$cat_gt" != "$cat" ]
 then
 	printf "failed\n"
-	exit
+	exit 1
 fi
 printf "passed\n"
+
 
 # 4. quietness test
 printf "quietness test.. "
@@ -106,7 +107,34 @@ quiet=$(echo "A red ball" | tagit record figure "color=red, shape=sphere, weight
 if [ "$quiet_gt" != "$quiet" ]
 then
 	printf "failed\n"
-	exit
+	exit 1
+fi
+printf "passed\n"
+
+
+# 5. Overwrite test
+printf "overwrite test.. "
+
+rm ~/.tagit/tagit.db
+
+echo "A red ball" | tagit record figure "color=red, shape=sphere, weight=10kg" > /dev/null
+echo "A yellow box" | tagit record figure "color=yellow, shape=cube, weight=10kg" > /dev/null
+echo "A green ball" | tagit record figure "color=green, shape=sphere, weight=5kg" > /dev/null
+echo "A red sphere" | tagit record figure "color=red, shape=sphere, weight=10kg" > /dev/null
+
+figure_gt=$'[figure] (color=yellow, shape=cube, weight=10kg)
+- raw: A yellow box
+[figure] (color=green, shape=sphere, weight=5kg)
+- raw: A green ball
+[figure] (color=red, shape=sphere, weight=10kg)
+- raw: A red sphere'
+
+figure=$(tagit report figure)
+
+if [ "$figure_gt" != "$figure" ]
+then
+	printf "failed\n"
+	exit 1
 fi
 printf "passed\n"
 

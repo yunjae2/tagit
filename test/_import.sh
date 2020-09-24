@@ -46,7 +46,7 @@ if [ "$is_diff" != "" ]
 then
 	printf "failed\n"
 	rm $figure_orig $perf_orig $figure_import $perf_import
-	exit
+	exit 1
 fi
 
 is_diff=$(diff $perf_orig $perf_import)
@@ -54,7 +54,7 @@ if [ "$is_diff" != "" ]
 then
 	printf "failed\n"
 	rm $figure_orig $perf_orig $figure_import $perf_import
-	exit
+	exit 1
 fi
 printf "passed\n"
 

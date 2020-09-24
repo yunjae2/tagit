@@ -30,7 +30,7 @@ latency: 10us
 if [ "$report_gt" != "$report" ]
 then
 	printf "failed\n"
-	exit
+	exit 1
 fi
 printf "passed\n"
 
@@ -58,7 +58,7 @@ report_gt=$'[perf] (storage=sata_ssd, mem=16GB)
 if [ "$report_gt" != "$report" ]
 then
 	printf "failed\n"
-	exit
+	exit 1
 fi
 printf "passed\n"
 
@@ -93,7 +93,7 @@ latency: 10us
 if [ "$report_gt" != "$report" ]
 then
 	printf "failed\n"
-	exit
+	exit 1
 fi
 printf "passed\n"
 
@@ -108,7 +108,7 @@ parse_gt="Error: deriving a recorded data category directly"
 if [ "$parse_gt" != "$parse" ]
 then
 	printf "failed\n"
-	exit
+	exit 1
 fi
 printf "passed\n"
 
@@ -123,7 +123,7 @@ parse_gt="Error: recording to a derived data category"
 if [ "$parse_gt" != "$parse" ]
 then
 	printf "failed\n"
-	exit
+	exit 1
 fi
 printf "passed\n"
 
@@ -144,7 +144,7 @@ report_gt=$'   0  awk \'/^IOPS/{print $NF}\'     raw    iops     True
 if [ "$report_gt" != "$report" ]
 then
 	printf "failed\n"
-	exit
+	exit 1
 fi
 printf "passed\n"
 
@@ -167,7 +167,7 @@ report_gt=$''
 if [ "$report_gt" != "$report" ]
 then
 	printf "failed\n"
-	exit
+	exit 1
 fi
 printf "passed\n"
 
@@ -190,7 +190,7 @@ report_gt=$'   0  awk \'/^latency/{print $NF}\'  raw    latency  False'
 if [ "$report_gt" != "$report" ]
 then
 	printf "failed\n"
-	exit
+	exit 1
 fi
 printf "passed\n"
 
