@@ -1,5 +1,6 @@
 from . import query
 from . import utils
+from . import taglist
 from .configs import *
 import subprocess
 import os
@@ -15,7 +16,6 @@ Notation
 exp: experiment
 var: variable
 """
-# TODO: Deal with default var values
 
 
 def get_exps():
@@ -31,29 +31,33 @@ def exp_exists(name):
     return False
 
 
-def create_exp(name):
+def create_exp(name, params):
     parser_name = utils.mkup_parser_name(name)
+
     query.create_table(name, [default_dtag])
     create_parser(parser_name)
+    taglist.create(name, params)
+
     print(f"New experiment: [{name}]")
 
 
 def update_vars(name, params):
     vars_ = list(params.keys())
     curr_vars = query.get_columns(name)
-    new_vars = []
+    new_params = {}
 
-    for var in vars_:
-        if var not in curr_vars:
-            new_vars.append(var)
+    for k, v in params.items():
+        if k not in curr_vars:
+            new_params[k] = v
 
-    # TODO: Show warning if a data exists before a new variable is added
-    query.new_columns(name, new_vars)
+    if new_params:
+        # TODO: Show warning if a data exists before a new variable is added
+        taglist.add_tags(name, new_params)
+        query.new_columns(name, new_params.keys())
 
-    if new_vars:
         print(f"[{name}] New tag added:")
-        for var in new_vars:
-            print(f"- {var}")
+        for key in new_params:
+            print(f"- {key}")
 
 
 def dtag_list_exists(name):
@@ -116,7 +120,7 @@ def mark_dtags_updated(exp_name, dtags):
 def record_data(exp_name, params, dtags, data):
     # Create experiment if it does not exist
     if not exp_exists(exp_name):
-        create_exp(exp_name)
+        create_exp(exp_name, params)
 
     # Update if new variable added
     update_vars(exp_name, params)
@@ -127,8 +131,14 @@ def record_data(exp_name, params, dtags, data):
         print("Warning: data overwritten")
         query._delete_rows(exp_name, params)
 
+    # Update implicit tags
+    taglist.update_implicit(exp_name, params)
+
+    # Fill empty tags with default values
+    params_ = taglist.mkup_record_params(exp_name, params)
+
     # Record data to the experiment
-    query.add_entity(exp_name, params, dtags, data)
+    query.add_entity(exp_name, params_, dtags, data)
 
     # Mark updated data categories for lazy parsing
     mark_dtags_updated(exp_name, dtags)
@@ -451,12 +461,11 @@ def list_exps():
 
 
 def list_vars(exp_name):
-    cols = query.get_columns(exp_name)
-    params = [x for x in cols if not utils.is_dtag(x)]
+    def_params = taglist.default_params(exp_name)
 
     print(f"[{exp_name}] List of tags:")
-    for param in params:
-        print(f"- {param}")
+    for k, v in def_params.items():
+        print(f"- {k} ({v})")
 
 
 def list_dtags(exp_name):
@@ -704,7 +713,7 @@ def parse_adder(args):
     dtag_src = utils.mkup_dtag(dtag_name_src)
 
     if not exp_exists(exp_name):
-        create_exp(exp_name)
+        create_exp(exp_name, {})
 
     validate_src_dtag(exp_name, dtag_src)
 

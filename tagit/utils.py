@@ -106,3 +106,11 @@ def mkup_command(comm_args: []) -> str:
     for arg in comm_args:
         comm_str = comm_str + " " + arg
     return comm_str
+
+
+def mkup_taglist_name(exp_name: str) -> str:
+    if is_prohibited_name(exp_name):
+        print("Interal error: wrong exp_name format")
+        sys.exit(-1)
+
+    return taglist_prefix + exp_name
