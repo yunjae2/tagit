@@ -122,8 +122,10 @@ def record_data(exp_name, params, dtags, data):
     update_vars(exp_name, params)
     update_dtags(exp_name, dtags)
 
-    # TODO: Show warning if the data already exists
-    # The new data is recorded while the old data is kept as well
+    existing = query._get_entities(exp_name, params, [])
+    if len(existing) != 0:
+        print("Warning: data overwritten")
+        query._delete_rows(exp_name, params)
 
     # Record data to the experiment
     query.add_entity(exp_name, params, dtags, data)
