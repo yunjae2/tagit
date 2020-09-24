@@ -35,9 +35,9 @@ printf "per-exp test.. "
 
 list=$(tagit list figure)
 list_gt=$'[figure] List of tags:
-- color
-- shape
-- weight
+- color (green)
+- shape (tetrahedron)
+- weight (5kg)
 [figure] List of data categories:
 - raw
 - nr_edges
