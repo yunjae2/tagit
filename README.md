@@ -84,7 +84,7 @@ Once a parsing rule is registered in an experiment, it is automatically applied 
 # 1. Record the data
 $ ./run_exp.sh | tagit record perf "storage=sata_ssd, mem=16GB"
 IOPS is 20K
-latency is 100u
+latency is 100us
 New experiment: [perf]
 [perf] New tag added:
 - storage
@@ -118,7 +118,6 @@ latency is 10us
 latency is 10us
 
 $ tagit report tutorial "mem=16GB, storage"
-[figures] (shape=sphere, weight=10kg, color=red)
 [perf] (mem=16GB, storage=sata_ssd)
 - raw: IOPS is 20K
 latency is 100us
