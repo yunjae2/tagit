@@ -117,7 +117,7 @@ latency is 10us
 - raw: IOPS is 60K
 latency is 10us
 
-$ tagit report tutorial "mem=16GB, storage"
+$ tagit report perf "mem=16GB, storage"
 [perf] (mem=16GB, storage=sata_ssd)
 - raw: IOPS is 20K
 latency is 100us
