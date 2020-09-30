@@ -126,16 +126,16 @@ def record_data(exp_name, params, dtags, data):
     update_vars(exp_name, params)
     update_dtags(exp_name, dtags)
 
-    existing = query._get_entities(exp_name, params, [])
-    if len(existing) != 0:
-        print("Warning: data overwritten")
-        query._delete_rows(exp_name, params)
-
     # Update implicit tags
     taglist.update_implicit(exp_name, params)
 
     # Fill empty tags with default values
     params_ = taglist.mkup_record_params(exp_name, params)
+
+    existing = query._get_entities(exp_name, params_, [])
+    if len(existing) != 0:
+        print("Warning: data overwritten")
+        query._delete_rows(exp_name, params_)
 
     # Record data to the experiment
     query.add_entity(exp_name, params_, dtags, data)
