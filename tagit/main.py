@@ -126,11 +126,11 @@ def record_data(exp_name, params, dtags, data):
     update_vars(exp_name, params)
     update_dtags(exp_name, dtags)
 
-    # Update implicit tags
-    taglist.update_implicit(exp_name, params)
-
     # Fill empty tags with default values
     params_ = taglist.mkup_record_params(exp_name, params)
+
+    # Update implicit tags
+    taglist.update_implicit(exp_name, params_)
 
     existing = query._get_entities(exp_name, params_, [])
     if len(existing) != 0:
