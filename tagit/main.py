@@ -211,9 +211,15 @@ def validate_record_params(exp_name, params, dtags):
 
 
 def validate_unfix_params(exp_name, params):
-    for key in params.keys():
-        if utils.is_prohibited_name(key):
-            print(f"Error: tag name cannot start with {tagit_prefix}")
+    cols = query.get_columns(exp_name)
+    tags = [x for x in cols if not utils.is_dtag(x)]
+
+r   for param in params:
+        if param not in tags:
+            print("Error: no such tag")
+            print(f"List of tags in {exp_name}:")
+            for tag in tags:
+                print(f"- {tag}")
             sys.exit(-1)
 
     bad_values = ["|", ",", "\""]
