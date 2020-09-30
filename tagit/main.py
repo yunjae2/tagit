@@ -210,6 +210,37 @@ def validate_record_params(exp_name, params, dtags):
     validate_dtags(exp_name, dtags, derived=False)
 
 
+def validate_fix_params(exp_name, params):
+    for key in params.keys():
+        if utils.is_prohibited_name(key):
+            print(f"Error: tag name cannot start with {tagit_prefix}")
+            sys.exit(-1)
+
+    bad_values = ["|", ",", "\""]
+    for mvalue in params.values():
+        if mvalue[0] != "*" or len(mvalue) != 1:
+            print(f"Error: tag value specified during unsetting")
+            sys.exit(-1)
+
+
+def validate_unfix_params(exp_name, params):
+    for key in params.keys():
+        if utils.is_prohibited_name(key):
+            print(f"Error: tag name cannot start with {tagit_prefix}")
+            sys.exit(-1)
+
+    bad_values = ["*", "|", ",", "\""]
+    for mvalue in params.values():
+        if len(mvalue) != 1:
+            print(f"Error: tag value can only be set to single value")
+            sys.exit(-1)
+        value = mvalue[0]
+        for bad_value in bad_values:
+            if bad_value in value:
+                print(f"Error: the value of a tag cannot contain '{bad_value}'")
+                sys.exit(-1)
+
+
 def get_from_stdin(quiet: bool):
     if quiet:
         data = sys.stdin.read()
@@ -796,6 +827,26 @@ def resetter(args):
     reset_all(yes)
 
 
+def fixer(args):
+    exp_name = args.exp_name
+    param_str = args.tags
+
+    params = utils.param_dict(param_str)
+    validate_fix_params(exp_name, params)
+
+    taglist.set_explicit(exp_name, params)
+
+
+def unfixer(args):
+    exp_name = args.exp_name
+    param_str = args.tags
+
+    params = utils.param_dict(param_str)
+    validate_unfix_params(exp_name, params)
+
+    taglist.unset_explicit(exp_name, params)
+
+
 def parse_args():
     # TODO: Implement the body
     parser = argparse.ArgumentParser()
@@ -840,6 +891,18 @@ def parse_args():
 
     # TODO: Separate manage command and remove command
     # TODO: Add data category option to delete
+
+    fix_parser = subparsers.add_parser('fix', help='Fix the value of tags')
+    fix_parser.add_argument('exp_name', type=str, help='experiment name')
+    fix_parser.add_argument('tags', type=str, default="",
+            help='"tags" (e.g., "arch=gpt3, train_set=stack_overflow, test_set=quora")')
+    fix_parser.set_defaults(worker=fixer)
+
+    unfix_parser = subparsers.add_parser('unfix', help='Unfix the value of tags')
+    unfix_parser.add_argument('exp_name', type=str, help='experiment name')
+    unfix_parser.add_argument('tags', type=str, default="",
+            help='"tags" without values (e.g., "arch, train_set, test_set")')
+    unfix_parser.set_defaults(worker=unfixer)
 
     # Parse command
     par_parser = subparsers.add_parser('parse',

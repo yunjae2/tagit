@@ -30,6 +30,18 @@ def update_implicit(exp_name, params):
     query._update_rows(name, cond_val)
 
 
+def set_explicit(exp_name, params):
+    name = utils.mkup_taglist_name(exp_name)
+    cond_val = [({"name": k}, {"explicit": v[0]}) for k, v in params.items()]
+    query._update_rows(name, cond_val)
+
+
+def unset_explicit(exp_name, params):
+    name = utils.mkup_taglist_name(exp_name)
+    cond_val = [({"name": k}, {"explicit": TAGIT_EMPTY}) for k in params]
+    query._update_rows(name, cond_val)
+
+
 def mkup_record_params(exp_name, params):
     name = utils.mkup_taglist_name(exp_name)
 
