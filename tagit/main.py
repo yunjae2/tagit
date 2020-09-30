@@ -210,7 +210,7 @@ def validate_record_params(exp_name, params, dtags):
     validate_dtags(exp_name, dtags, derived=False)
 
 
-def validate_fix_params(exp_name, params):
+def validate_unfix_params(exp_name, params):
     for key in params.keys():
         if utils.is_prohibited_name(key):
             print(f"Error: tag name cannot start with {tagit_prefix}")
@@ -223,7 +223,7 @@ def validate_fix_params(exp_name, params):
             sys.exit(-1)
 
 
-def validate_unfix_params(exp_name, params):
+def validate_fix_params(exp_name, params):
     for key in params.keys():
         if utils.is_prohibited_name(key):
             print(f"Error: tag name cannot start with {tagit_prefix}")
@@ -833,6 +833,13 @@ def fixer(args):
 
     params = utils.param_dict(param_str)
     validate_fix_params(exp_name, params)
+
+    # Create experiment if it does not exist
+    if not exp_exists(exp_name):
+        create_exp(exp_name, params)
+
+    # Update if new variable added
+    update_vars(exp_name, params)
 
     taglist.set_explicit(exp_name, params)
 
