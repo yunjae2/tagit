@@ -51,4 +51,31 @@ then
 fi
 printf "passed\n"
 
+# 3. Fixed tags
+printf "fixed value test.. "
+
+rm ~/.tagit/tagit.db
+
+tagit fix figure "color=blue" > /dev/null
+echo "A red ball" | tagit record figure "color=red, shape=sphere, weight=10kg" > /dev/null
+echo "A yellow box" | tagit record figure "color=yellow, shape=cube" > /dev/null
+echo "A green ball" | tagit record figure "color=green, shape=sphere" > /dev/null
+
+figure_gt=$'[figure] List of tags:
+- color (blue)
+- shape (sphere)
+- weight (10kg)
+[figure] List of data categories:
+- raw'
+
+figure=$(tagit list figure)
+
+if [ "$figure_gt" != "$figure" ]
+then
+	printf "failed\n"
+	exit 1
+fi
+printf "passed\n"
+
+
 echo "Test passed"
