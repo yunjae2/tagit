@@ -2,6 +2,7 @@ from .configs import *
 from . import query
 from . import utils
 from collections import OrderedDict
+import sys
 
 
 def create(exp_name, params):
@@ -26,19 +27,19 @@ def _add_tags(name, params):
 
 def update_implicit(exp_name, params):
     name = utils.mkup_taglist_name(exp_name)
-    cond_val = [({"name": k}, {"implicit": v[0]}) for k, v in params.items()]
+    cond_val = [({"name": [k]}, {"implicit": v[0]}) for k, v in params.items()]
     query._update_rows(name, cond_val)
 
 
 def set_explicit(exp_name, params):
     name = utils.mkup_taglist_name(exp_name)
-    cond_val = [({"name": k}, {"explicit": v[0]}) for k, v in params.items()]
+    cond_val = [({"name": [k]}, {"explicit": v[0]}) for k, v in params.items()]
     query._update_rows(name, cond_val)
 
 
 def unset_explicit(exp_name, params):
     name = utils.mkup_taglist_name(exp_name)
-    cond_val = [({"name": k}, {"explicit": TAGIT_EMPTY}) for k in params]
+    cond_val = [({"name": [k]}, {"explicit": TAGIT_EMPTY}) for k in params]
     query._update_rows(name, cond_val)
 
 

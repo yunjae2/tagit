@@ -6,6 +6,34 @@ import sqlitebck
 from collections import OrderedDict
 
 
+def __where(conditions: OrderedDict()):
+    sql = ""
+    first = True
+    for key, mvalue in conditions.items():
+        if mvalue[0] == "*":
+            continue
+
+        # Operators
+        if first:
+            first = False
+            sql = sql + " WHERE"
+        else:
+            sql = sql + " AND"
+
+        # Values
+        sql = sql + " ("
+        first_val = True
+        for value in mvalue:
+            if first_val:
+                first_val = False
+                sql = sql + f"{key} = '{value}'"
+            else:
+                sql = sql + f" OR {key} = '{value}'"
+        sql = sql + ")"
+
+    return sql
+
+
 def create_connection(db_file):
     dirname = os.path.dirname(db_file)
     if dirname:
@@ -178,29 +206,7 @@ def get_entities(name, params, dtags):
     sql = sql + f" FROM {name}"
 
     # 2. WHERE cluase (if required)
-    first = True
-    for key in params.keys():
-        mvalue = params[key]
-        if mvalue[0] == "*":
-            continue
-
-        # Operators
-        if first:
-            first = False
-            sql = sql + " WHERE"
-        else:
-            sql = sql + " AND"
-
-        # Values
-        sql = sql + " ("
-        first_val = True
-        for value in mvalue:
-            if first_val:
-                first_val = False
-                sql = sql + f"{key} = '{value}'"
-            else:
-                sql = sql + f" OR {key} = '{value}'"
-        sql = sql + ")"
+    sql = sql + __where(params)
 
     c.execute(sql)
 
@@ -242,25 +248,7 @@ def _get_entities(table, conditions, cols):
     sql = sql + f" FROM {table}"
 
     # 2. WHERE cluase (if required)
-    first = True
-    for key, mvalue in conditions.items():
-        # Operators
-        if first:
-            first = False
-            sql = sql + " WHERE"
-        else:
-            sql = sql + " AND"
-
-        # Values
-        sql = sql + " ("
-        first_val = True
-        for value in mvalue:
-            if first_val:
-                first_val = False
-                sql = sql + f"{key} = '{value}'"
-            else:
-                sql = sql + f" OR {key} = '{value}'"
-        sql = sql + ")"
+    sql = sql + __where(conditions)
 
     conn = create_connection(db_file)
     c = conn.cursor()
@@ -290,29 +278,7 @@ def delete_rows(name: str, params: OrderedDict()):
 
     sql = f"DELETE FROM {name}"
 
-    first = True
-    for key in params.keys():
-        mvalue = params[key]
-        if mvalue[0] == "*":
-            continue
-
-        # Operators
-        if first:
-            first = False
-            sql = sql + " WHERE"
-        else:
-            sql = sql + " AND"
-
-        # Values
-        sql = sql + " ("
-        first_val = True
-        for value in mvalue:
-            if first_val:
-                first_val = False
-                sql = sql + f"{key} = '{value}'"
-            else:
-                sql = sql + f" OR {key} = '{value}'"
-        sql = sql + ")"
+    sql = sql + __where(params)
 
     # TODO: Handle error if the table does not exist
     # TODO: Handle error if the columns do not match
@@ -323,29 +289,7 @@ def delete_rows(name: str, params: OrderedDict()):
 def _delete_rows(table: str, conditions: OrderedDict(), limit=None, offset=0):
     sql = f"DELETE FROM {table}"
 
-    first = True
-    for key, mvalue in conditions.items():
-        if mvalue[0] == "*":
-            continue
-
-        # Operators
-        if first:
-            first = False
-            sql = sql + " WHERE"
-        else:
-            sql = sql + " AND"
-
-        # Values
-        sql = sql + " ("
-        first_val = True
-        for value in mvalue:
-            if first_val:
-                first_val = False
-                sql = sql + f"{key} = '{value}'"
-            else:
-                sql = sql + f" OR {key} = '{value}'"
-        sql = sql + ")"
-
+    sql = sql + __where(conditions)
 
     if limit:
         sql = sql + f" LIMIT {limit} OFFSET {offset}"
@@ -393,13 +337,7 @@ def _append_row(table: str, conditions: {}, vals: {}):
             sql = sql + f", {key} = {key} || '{value}'"
 
     # 3. WHERE clause
-    first = True
-    for key, value in conditions.items():
-        if first:
-            first = False
-            sql = sql + f" WHERE {key} = '{value}'"
-        else:
-            sql = sql + f" AND {key} = '{value}'"
+    sql = sql + __where(conditions)
 
     conn = create_connection(db_file)
     c = conn.cursor()
@@ -424,13 +362,7 @@ def _update_row(table: str, conditions: {}, vals: {}):
             sql = sql + f", {key} = '{value}'"
 
     # 3. WHERE clause
-    first = True
-    for key, value in conditions.items():
-        if first:
-            first = False
-            sql = sql + f" WHERE {key} = '{value}'"
-        else:
-            sql = sql + f" AND {key} = '{value}'"
+    sql = sql + __where(conditions)
 
     conn = create_connection(db_file)
     c = conn.cursor()

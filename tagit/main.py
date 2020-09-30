@@ -113,7 +113,7 @@ def update_dtags(name, dtags, derived=False):
 
 def mark_dtags_updated(exp_name, dtags):
     dtag_list_name = utils.mkup_dtag_list_name(exp_name)
-    cond_vals = [({"name": x}, {"updated": "True"}) for x in dtags]
+    cond_vals = [({"name": [x]}, {"updated": "True"}) for x in dtags]
     query._update_rows(dtag_list_name, cond_vals)
 
 
@@ -214,7 +214,7 @@ def validate_unfix_params(exp_name, params):
     cols = query.get_columns(exp_name)
     tags = [x for x in cols if not utils.is_dtag(x)]
 
-r   for param in params:
+    for param in params:
         if param not in tags:
             print("Error: no such tag")
             print(f"List of tags in {exp_name}:")
@@ -465,6 +465,50 @@ def delete_exp(exp_name: str):
         query.drop_table(dtag_list_name)
 
 
+def validate_update_params(exp_name, params, uparams):
+    cols = query.get_columns(exp_name)
+    tags = [x for x in cols if not utils.is_dtag(x)]
+
+    for param in params:
+        if param not in tags:
+            print("Error: no such tag")
+            print(f"List of tags in {exp_name}:")
+            for tag in tags:
+                print(f"- {tag}")
+            sys.exit(-1)
+
+    for key in uparams.keys():
+        if utils.is_prohibited_name(key):
+            print(f"Error: tag name cannot start with {tagit_prefix}")
+            sys.exit(-1)
+
+    bad_values = ["*", "|", ",", "\""]
+    for value in uparams.values():
+        for bad_value in bad_values:
+            if bad_value in value:
+                print(f"Error: the value of a tag cannot contain '{bad_value}'")
+                sys.exit(-1)
+
+
+def update_tags(exp_name: str, params: OrderedDict(), uparams: OrderedDict()):
+    # Update if new variable added
+    update_vars(exp_name, uparams)
+
+    # Abort if the record with the same tags already exists
+    params_after = utils.param_after_update(params, uparams)
+    existing = query._get_entities(exp_name, params_after, [])
+    if len(existing) != 0:
+        print("Error: conflict with existing record")
+        sys.exit(-1)
+
+    uparams_ = OrderedDict((k, [v]) for (k, v) in uparams.items())
+    # Update implicit tags
+    taglist.update_implicit(exp_name, uparams_)
+
+    # Update tags
+    query._update_row(exp_name, params, uparams)
+
+
 def manager(args):
     # TODO: Implement the body
     # Features
@@ -479,6 +523,7 @@ def manager(args):
     exp_name = args.exp_name
     delete = args.d
     delete_param_str = args.r
+    update_param_str = args.update
 
     check_exp_exists(exp_name)
 
@@ -489,6 +534,11 @@ def manager(args):
         params = utils.param_dict(delete_param_str)
         validate_params(exp_name, params, [])
         delete_data(exp_name, params)
+
+    elif update_param_str:
+        params, uparams = utils.param_for_update(update_param_str)
+        validate_update_params(exp_name, params, uparams)
+        update_tags(exp_name, params, uparams)
 
 
 def list_exps():
@@ -661,7 +711,7 @@ def run_parsing_rule(exp_name, src, dest, cmd):
     records = query._get_entities(exp_name, {}, [])
     for record in records:
         data = record[src]
-        params = OrderedDict((k, v) for (k, v) in record.items() \
+        params = OrderedDict((k, [v]) for (k, v) in record.items() \
                 if not utils.is_prohibited_name(k))
         parsed = parse_data(exp_name, src, dest, cmd, params, data)
         append_data(exp_name, params, dest, parsed)
@@ -899,6 +949,8 @@ def parse_args():
             help='delete an experiment')
     man_parser.add_argument('-r', type=str, nargs='?', const=" ",
             metavar='tags', help='delete data with specified tags')
+    man_parser.add_argument('-u', '--update', type=str, metavar='tags',
+            help='Update tag values')
     # TODO: Add default value option
     man_parser.set_defaults(worker=manager)
 

@@ -23,6 +23,37 @@ def param_dict(param_str: str) -> OrderedDict():
     return params
 
 
+def param_for_update(param_str: str) -> (OrderedDict(), OrderedDict()):
+    param_list = param_str.split(",")
+    params = OrderedDict()
+    uparams = OrderedDict()
+
+    if not param_str.strip():
+        return params
+
+    for param in param_list:
+        if '=' in param:
+            key, mvalue = tuple(x.strip() for x in param.split('='))
+            values = mvalue.split('|')
+            params[key] = values
+        elif '->' in param:
+            key, value = tuple(x.strip() for x in param.split('->'))
+            uparams[key] = value
+        else:
+            key = param.strip()
+            params[key] = ['*']
+
+    return params, uparams
+
+
+def param_after_update(params: OrderedDict(), uparams: OrderedDict()) -> OrderedDict():
+    params_after = OrderedDict(params)
+    for key, value in uparams.items():
+        params_after[key] = [value]
+
+    return params_after
+
+
 def mkup_dtags(name_str: str) -> []:
     # Convert name_str: str() -> dtags: []
     # Make up the internal names of the data categories
