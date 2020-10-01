@@ -6,4 +6,4 @@ import sys
 
 
 def rename(old, new):
-    query.rename_table(old, new)
+    query._rename_table(old, new)
