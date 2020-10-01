@@ -314,5 +314,5 @@ Once a parsing rule is registered in an experiment, it is automatically applied 
 
 
 ## Notes
-This tools is currently alpha version and may contain lots of bugs.
+This tools is currently a beta version and may contain some bugs.
 Issues & pull requests about new features, bug reports are appreciated.
