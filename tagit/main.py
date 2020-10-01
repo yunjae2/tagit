@@ -437,7 +437,7 @@ def reporter(args):
     run_parsing_graph(exp_name)
 
     # data: [{tag1: val1, tag2: val2, ..., dtag1: data1, ...}, {...}, ...]
-    data = query.get_entities(exp_name, params, dtags)
+    data = exp.get_data(exp_name, params, dtags)
 
     if csv_file:
         if csv_file == "_use_exp_name.csv":

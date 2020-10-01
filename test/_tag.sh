@@ -92,7 +92,7 @@ echo "A green ball" | tagit record figure "color=green, shape=sphere" > /dev/nul
 
 figure_gt=$'[figure] (color=red, shape=sphere, weight=10kg)
 - raw: A red ball
-[figure] (color=yellow, shape=cube, weight=None)
+[figure] (color=yellow, shape=cube, weight=)
 - raw: A yellow box
 [figure] (color=green, shape=sphere, weight=5kg)
 - raw: A green ball'
@@ -119,7 +119,7 @@ echo "A green ball" | tagit record figure "color=green, shape=sphere, weight=5kg
 
 figure_gt=$'[figure] (color=red, shape=sphere, weight=10kg)
 - raw: A red ball
-[figure] (color=yellow, shape=cube, weight=None)
+[figure] (color=yellow, shape=cube, weight=)
 - raw: A yellow box
 [figure] (color=green, shape=sphere, weight=5kg)
 - raw: A green ball'
@@ -179,11 +179,11 @@ figure_gt=$'[figure] (color=red, shape=sphere, weight=10kg)
 - raw: A red ball
 [figure] (color=yellow, shape=cube, weight=5kg)
 - raw: A yellow box
-[figure] (color=green, shape=sphere, weight=None)
+[figure] (color=green, shape=sphere, weight=)
 - raw: A green ball
-[figure] (color=pink, shape=None, weight=20kg)
+[figure] (color=pink, shape=, weight=20kg)
 - raw: A pink ball
-[figure] (color=None, shape=cube, weight=None)
+[figure] (color=, shape=cube, weight=)
 - raw: A pink box'
 
 figure=$(tagit report figure "color, shape, weight")
@@ -260,7 +260,7 @@ tagit tag update figure "shape=sphere, volume->100L" > /dev/null
 report=$(tagit report figure)
 report_gt=$'[figure] (color=red, shape=sphere, weight=10kg, volume=100L)
 - raw: A red ball
-[figure] (color=yellow, shape=cube, weight=10kg, volume=None)
+[figure] (color=yellow, shape=cube, weight=10kg, volume=)
 - raw: A yellow box
 [figure] (color=green, shape=sphere, weight=5kg, volume=100L)
 - raw: A green ball'
