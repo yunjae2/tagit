@@ -78,6 +78,7 @@ def create_table(name, cols):
     sql = sql + ")"
 
     c.execute(sql)
+    conn.commit()
 
 
 def get_columns(name):
@@ -95,6 +96,8 @@ def new_columns(name, columns):
     for column in columns:
         # TODO: Handle error if column already exists
         c.execute(f"ALTER TABLE {name} ADD COLUMN {column} TEXT")
+
+    conn.commit()
 
 
 def new_column(name, column):
@@ -270,6 +273,7 @@ def drop_table(name: str):
 
     # TODO: Handle error if the table does not exist
     c.execute(f"DROP TABLE {name}")
+    conn.commit()
 
 
 def delete_rows(name: str, params: OrderedDict()):
@@ -375,3 +379,21 @@ def _update_row(table: str, conditions: {}, vals: {}):
 def _update_rows(table: str, cond_vals: []):
     for cond, val in cond_vals:
         _update_row(table, cond, val)
+
+
+def _rename_table(old_name: str, new_name: str):
+    sql = f"ALTER TABLE {old_name} RENAME TO {new_name}"
+
+    conn = create_connection(db_file)
+    c = conn.cursor()
+    c.execute(sql)
+    conn.commit()
+
+
+def _rename_column(table: str, old_name: str, new_name: str):
+    sql = f"ALTER TABLE {table} RENAME COLUMN {old_name} TO {new_name}"
+
+    conn = create_connection(db_file)
+    c = conn.cursor()
+    c.execute(sql)
+    conn.commit()

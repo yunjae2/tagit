@@ -1,6 +1,9 @@
 from . import query
 from . import utils
 from . import taglist
+from . import dtaglist
+from . import parser
+from . import exp
 from .configs import *
 import subprocess
 import os
@@ -910,6 +913,53 @@ def unfixer(args):
     taglist.unset_explicit(exp_name, params)
 
 
+def rename_exp(old, new):
+    # Check the exp existence
+    check_exp_exists(old)
+
+    # Abort if the new exp name already occupied
+    if exp_exists(new):
+        print(f"Error: {new} already exists")
+        sys.exit(-1)
+
+    exp.rename(old, new)
+    dtaglist.rename(old, new)
+    parser.rename(old, new)
+    taglist.rename(old, new)
+
+
+def rename_tag(exp_name, old, new):
+    # check the tag existence
+    if not taglist.tag_exists(exp_name, old):
+        print("Error: no such tag")
+        print(f"List of tags in {exp_name}:")
+        for tag in tags:
+            print(f"- {tag}")
+        sys.exit(-1)
+
+    # Abort if the new tag name already occupied
+    if taglist.tag_exists(exp_name, new):
+        print(f"Error: {new} is already exists")
+        sys.exit(-1)
+
+    taglist.rename_tag(exp_name, old, new)
+
+
+def exp_renamer(args):
+    old_name = args.name
+    new_name = args.new_name
+
+    rename_exp(old_name, new_name)
+
+
+def tag_renamer(args):
+    exp_name = args.exp_name
+    old_name = args.name
+    new_name = args.new_name
+
+    rename_tag(exp_name, old_name, new_name)
+
+
 def parse_args():
     # TODO: Implement the body
     parser = argparse.ArgumentParser()
@@ -945,6 +995,7 @@ def parse_args():
     # Manage command
     man_parser = subparsers.add_parser('manage', help='manage recorded data and tags')
     man_parser.add_argument('exp_name', type=str, help='experiment name')
+    # TODO: Move to exp subcommand
     man_parser.add_argument('-d', action='store_true',
             help='delete an experiment')
     man_parser.add_argument('-r', type=str, nargs='?', const=" ",
@@ -957,12 +1008,35 @@ def parse_args():
     # TODO: Separate manage command and remove command
     # TODO: Add data category option to delete
 
+    # exp command
+    exp_parser = subparsers.add_parser('exp', help='manage experiments')
+    exp_subparsers = exp_parser.add_subparsers(title='subcommands')
+
+    # exp rename command
+    exp_ren_parser = exp_subparsers.add_parser('rename', help='rename an experiment')
+    exp_ren_parser.add_argument('name', type=str, help='current experiment name')
+    exp_ren_parser.add_argument('new_name', type=str, help='new experiment name')
+    exp_ren_parser.set_defaults(worker=exp_renamer)
+
+    # tag command
+    tag_parser = subparsers.add_parser('tag', help='manage tags')
+    tag_subparsers = tag_parser.add_subparsers(title='subcommands')
+
+    # tag rename command
+    tag_ren_parser = tag_subparsers.add_parser('rename', help='rename a tag')
+    tag_ren_parser.add_argument('exp_name', type=str, help='experiment name')
+    tag_ren_parser.add_argument('name', type=str, help='current tag name')
+    tag_ren_parser.add_argument('new_name', type=str, help='new tag name')
+    tag_ren_parser.set_defaults(worker=tag_renamer)
+
+    # fix command
     fix_parser = subparsers.add_parser('fix', help='Fix the value of tags')
     fix_parser.add_argument('exp_name', type=str, help='experiment name')
     fix_parser.add_argument('tags', type=str, default="",
             help='"tags" (e.g., "arch=gpt3, train_set=stack_overflow, test_set=quora")')
     fix_parser.set_defaults(worker=fixer)
 
+    # unfix command
     unfix_parser = subparsers.add_parser('unfix', help='Unfix the value of tags')
     unfix_parser.add_argument('exp_name', type=str, help='experiment name')
     unfix_parser.add_argument('tags', type=str, default="",
