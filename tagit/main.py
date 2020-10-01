@@ -34,12 +34,12 @@ def exp_exists(name):
     return False
 
 
-def create_exp(name, params):
+def create_exp(name):
     parser_name = utils.mkup_parser_name(name)
 
     query.create_table(name, [default_dtag])
     create_parser(parser_name)
-    taglist.create(name, params)
+    taglist.create(name)
 
     print(f"New experiment: [{name}]")
 
@@ -123,7 +123,7 @@ def mark_dtags_updated(exp_name, dtags):
 def record_data(exp_name, params, dtags, data):
     # Create experiment if it does not exist
     if not exp_exists(exp_name):
-        create_exp(exp_name, params)
+        create_exp(exp_name)
 
     # Update if new variable added
     update_vars(exp_name, params)
@@ -803,7 +803,7 @@ def parse_adder(args):
     dtag_src = utils.mkup_dtag(dtag_name_src)
 
     if not exp_exists(exp_name):
-        create_exp(exp_name, {})
+        create_exp(exp_name)
 
     validate_src_dtag(exp_name, dtag_src)
 
@@ -895,7 +895,7 @@ def fixer(args):
 
     # Create experiment if it does not exist
     if not exp_exists(exp_name):
-        create_exp(exp_name, params)
+        create_exp(exp_name)
 
     # Update if new variable added
     update_vars(exp_name, params)

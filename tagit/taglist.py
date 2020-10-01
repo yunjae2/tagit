@@ -5,11 +5,9 @@ from collections import OrderedDict
 import sys
 
 
-def create(exp_name, params):
+def create(exp_name):
     name = utils.mkup_taglist_name(exp_name)
     query.create_table(name, ["name", "explicit", "implicit"])
-
-    _add_tags(name, params)
 
 
 def add_tags(exp_name, params):
