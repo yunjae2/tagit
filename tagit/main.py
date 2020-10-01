@@ -526,7 +526,6 @@ def manager(args):
     exp_name = args.exp_name
     delete = args.d
     delete_param_str = args.r
-    update_param_str = args.update
 
     check_exp_exists(exp_name)
 
@@ -537,11 +536,6 @@ def manager(args):
         params = utils.param_dict(delete_param_str)
         validate_params(exp_name, params, [])
         delete_data(exp_name, params)
-
-    elif update_param_str:
-        params, uparams = utils.param_for_update(update_param_str)
-        validate_update_params(exp_name, params, uparams)
-        update_tags(exp_name, params, uparams)
 
 
 def list_exps():
@@ -907,6 +901,8 @@ def tag_unfixer(args):
     exp_name = args.exp_name
     param_str = args.tags
 
+    check_exp_exists(exp_name)
+
     params = utils.param_dict(param_str)
     validate_unfix_params(exp_name, params)
 
@@ -957,7 +953,20 @@ def tag_renamer(args):
     old_name = args.name
     new_name = args.new_name
 
+    check_exp_exists(exp_name)
+
     rename_tag(exp_name, old_name, new_name)
+
+
+def tag_updater(args):
+    exp_name = args.exp_name
+    param_str = args.tags
+
+    check_exp_exists(exp_name)
+
+    params, uparams = utils.param_for_update(param_str)
+    validate_update_params(exp_name, params, uparams)
+    update_tags(exp_name, params, uparams)
 
 
 def parse_args():
@@ -977,6 +986,7 @@ def parse_args():
             help='record data quietly')
     rec_parser.set_defaults(worker=recorder)
 
+
     # Report command
     rep_parser = subparsers.add_parser('report', help='report data by tags')
     rep_parser.add_argument('exp_name', type=str, help='experiment name')
@@ -992,6 +1002,7 @@ def parse_args():
             help='data category to report (e.g., "latency, throughput")')
     rep_parser.set_defaults(worker=reporter)
 
+
     # Manage command
     man_parser = subparsers.add_parser('manage', help='manage recorded data and tags')
     man_parser.add_argument('exp_name', type=str, help='experiment name')
@@ -1000,13 +1011,11 @@ def parse_args():
             help='delete an experiment')
     man_parser.add_argument('-r', type=str, nargs='?', const=" ",
             metavar='tags', help='delete data with specified tags')
-    man_parser.add_argument('-u', '--update', type=str, metavar='tags',
-            help='Update tag values')
-    # TODO: Add default value option
     man_parser.set_defaults(worker=manager)
 
     # TODO: Separate manage command and remove command
     # TODO: Add data category option to delete
+
 
     # exp command
     exp_parser = subparsers.add_parser('exp', help='manage experiments')
@@ -1017,6 +1026,7 @@ def parse_args():
     exp_ren_parser.add_argument('name', type=str, help='current experiment name')
     exp_ren_parser.add_argument('new_name', type=str, help='new experiment name')
     exp_ren_parser.set_defaults(worker=exp_renamer)
+
 
     # tag command
     tag_parser = subparsers.add_parser('tag', help='manage tags')
@@ -1042,6 +1052,14 @@ def parse_args():
     tag_unfix_parser.add_argument('tags', type=str, default="",
             help='"tags" without values (e.g., "arch, train_set, test_set")')
     tag_unfix_parser.set_defaults(worker=tag_unfixer)
+
+    # tag update command
+    tag_upd_parser = tag_subparsers.add_parser('update', help='update the value of tags')
+    tag_upd_parser.add_argument('exp_name', type=str, help='experiment name')
+    tag_upd_parser.add_argument('tags', type=str,
+            help='"tags" (e.g., "color=red, shape=cube, weight->20kg, volume->10L)"')
+    tag_upd_parser.set_defaults(worker=tag_updater)
+
 
     # Parse command
     par_parser = subparsers.add_parser('parse',
@@ -1076,11 +1094,13 @@ def parse_args():
             help='remove all rules')
     par_rem_parser.set_defaults(worker=parse_remover)
 
+
     # List command
     list_parser = subparsers.add_parser('list', help='list experiments or tags')
     list_parser.add_argument('exp_name', type=str, nargs='?',
             help='experiment name')
     list_parser.set_defaults(worker=lister)
+
 
     # Import command
     imp_parser = subparsers.add_parser('import', help='import data')
@@ -1091,11 +1111,13 @@ def parse_args():
     # TODO: Import from csv / file hierarchy
     imp_parser.set_defaults(worker=importer)
 
+
     # Export command
     exp_parser = subparsers.add_parser('export', help='export data')
     exp_parser.add_argument('output_dump', type=str,
             help='output file name to dump')
     exp_parser.set_defaults(worker=exporter)
+
 
     # Reset command
     reset_parser = subparsers.add_parser('reset', help='reset tagit')
