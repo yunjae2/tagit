@@ -7,7 +7,7 @@ import sys
 
 def create(exp_name):
     name = utils.mkup_taglist_name(exp_name)
-    query.create_table(name, ["name", "explicit", "implicit"])
+    query.create_table(name, ["name", "default_val"])
 
 
 def add_tags(exp_name, params):
@@ -19,25 +19,19 @@ def _add_tags(name, params):
     if not params:
         return
 
-    tags = [{"name": k, "explicit": TAGIT_EMPTY, "implicit": TAGIT_EMPTY} for k in params]
+    tags = [{"name": k, "default_val": TAGIT_EMPTY} for k in params]
     query._add_entities(name, tags)
 
 
-def update_implicit(exp_name, params):
+def set_default(exp_name, params):
     name = utils.mkup_taglist_name(exp_name)
-    cond_val = [({"name": [k]}, {"implicit": v[0]}) for k, v in params.items()]
+    cond_val = [({"name": [k]}, {"default_val": v[0]}) for k, v in params.items()]
     query._update_rows(name, cond_val)
 
 
-def set_explicit(exp_name, params):
+def unset_default(exp_name, params):
     name = utils.mkup_taglist_name(exp_name)
-    cond_val = [({"name": [k]}, {"explicit": v[0]}) for k, v in params.items()]
-    query._update_rows(name, cond_val)
-
-
-def unset_explicit(exp_name, params):
-    name = utils.mkup_taglist_name(exp_name)
-    cond_val = [({"name": [k]}, {"explicit": TAGIT_EMPTY}) for k in params]
+    cond_val = [({"name": [k]}, {"default_val": TAGIT_EMPTY}) for k in params]
     query._update_rows(name, cond_val)
 
 
@@ -48,17 +42,13 @@ def mkup_record_params(exp_name, params):
     tags = query._get_entities(name, {}, [])
     for tag in tags:
         key = tag["name"]
-        explicit = tag["explicit"]
-        implicit = tag["implicit"]
+        default = tag["default_val"]
 
         if key not in params_:
-            if explicit != TAGIT_EMPTY:
-                params_[key] = [explicit]
-            elif implicit != TAGIT_EMPTY:
-                params_[key] = [implicit]
+            if default != TAGIT_EMPTY:
+                params_[key] = [default]
             else:
-                print("Internal error: wrong taglist entry")
-                sys.exit(-1)
+                params_[key] = [None]
 
     return params_
 
@@ -70,16 +60,12 @@ def default_params(exp_name):
     params = OrderedDict()
     for tag in tags:
         key = tag["name"]
-        explicit = tag["explicit"]
-        implicit = tag["implicit"]
+        default = tag["default_val"]
 
-        if explicit != TAGIT_EMPTY:
-            params[key] = explicit
-        elif implicit !=  TAGIT_EMPTY:
-            params[key] = implicit
+        if default != TAGIT_EMPTY:
+            params[key] = default
         else:
-            print("Internal error: wrong taglist entry")
-            sys.exit(-1)
+            params[key] = ""
 
     return params
 

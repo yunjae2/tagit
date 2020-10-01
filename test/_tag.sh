@@ -27,9 +27,9 @@ fi
 
 list=$(tagit list figure)
 list_gt=$'[figure] List of tags:
-- colour (green)
-- shape (sphere)
-- weight (5kg)
+- colour
+- shape
+- weight
 [figure] List of data categories:
 - raw'
 
@@ -80,8 +80,8 @@ printf "passed\n"
 
 
 # 2. fix test
-# 2-1. explicit vs implicit
-printf "Fix test 1 (priority).. "
+# 2-1. basic test
+printf "Fix test 1 (basic).. "
 
 rm ~/.tagit/tagit.db
 
@@ -92,7 +92,7 @@ echo "A green ball" | tagit record figure "color=green, shape=sphere" > /dev/nul
 
 figure_gt=$'[figure] (color=red, shape=sphere, weight=10kg)
 - raw: A red ball
-[figure] (color=yellow, shape=cube, weight=10kg)
+[figure] (color=yellow, shape=cube, weight=None)
 - raw: A yellow box
 [figure] (color=green, shape=sphere, weight=5kg)
 - raw: A green ball'
@@ -119,7 +119,7 @@ echo "A green ball" | tagit record figure "color=green, shape=sphere, weight=5kg
 
 figure_gt=$'[figure] (color=red, shape=sphere, weight=10kg)
 - raw: A red ball
-[figure] (color=yellow, shape=cube, weight=10kg)
+[figure] (color=yellow, shape=cube, weight=None)
 - raw: A yellow box
 [figure] (color=green, shape=sphere, weight=5kg)
 - raw: A green ball'
@@ -179,11 +179,11 @@ figure_gt=$'[figure] (color=red, shape=sphere, weight=10kg)
 - raw: A red ball
 [figure] (color=yellow, shape=cube, weight=5kg)
 - raw: A yellow box
-[figure] (color=green, shape=sphere, weight=5kg)
+[figure] (color=green, shape=sphere, weight=None)
 - raw: A green ball
-[figure] (color=pink, shape=sphere, weight=20kg)
+[figure] (color=pink, shape=None, weight=20kg)
 - raw: A pink ball
-[figure] (color=pink, shape=cube, weight=20kg)
+[figure] (color=None, shape=cube, weight=None)
 - raw: A pink box'
 
 figure=$(tagit report figure "color, shape, weight")
@@ -266,32 +266,6 @@ report_gt=$'[figure] (color=red, shape=sphere, weight=10kg, volume=100L)
 - raw: A green ball'
 
 if [ "$report_gt" != "$report" ]
-then
-	printf "failed\n"
-	exit 1
-fi
-printf "passed\n"
-
-# 4-3. Implicit default tag value
-printf "Update test 3 (implicit default value).. "
-
-rm ~/.tagit/tagit.db
-
-echo "A red ball" | tagit record figure "color=red, shape=sphere, weight=10kg" > /dev/null
-echo "A yellow box" | tagit record figure "color=yellow, shape=cube, weight=10kg" > /dev/null
-echo "A green ball" | tagit record figure "color=green, shape=sphere, weight=5kg" > /dev/null
-
-tagit tag update figure "color=red, volume->100L, color->magenta" > /dev/null
-list=$(tagit list figure)
-list_gt=$'[figure] List of tags:
-- color (magenta)
-- shape (sphere)
-- weight (5kg)
-- volume (100L)
-[figure] List of data categories:
-- raw'
-
-if [ "$list_gt" != "$list" ]
 then
 	printf "failed\n"
 	exit 1

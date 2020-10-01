@@ -139,31 +139,4 @@ fi
 printf "passed\n"
 
 
-# 6. Implicit default tag value test
-printf "default tag (implicit) test.. "
-rm ~/.tagit/tagit.db
-
-echo "A red ball" | tagit record figure "color=red, shape=sphere, weight=10kg" > /dev/null
-echo "A yellow box" | tagit record figure "color=yellow, shape=cube" > /dev/null
-echo "A green box" | tagit record figure "color=green, weight=5kg" > /dev/null
-echo "A green ball" | tagit record figure "shape=sphere" > /dev/null
-
-figure_gt=$'[figure] (color=red, shape=sphere, weight=10kg)
-- raw: A red ball
-[figure] (color=yellow, shape=cube, weight=10kg)
-- raw: A yellow box
-[figure] (color=green, shape=cube, weight=5kg)
-- raw: A green box
-[figure] (color=green, shape=sphere, weight=5kg)
-- raw: A green ball'
-
-figure=$(tagit report figure)
-
-if [ "$figure_gt" != "$figure" ]
-then
-	printf "failed\n"
-	exit 1
-fi
-printf "passed\n"
-
 echo "Test passed"

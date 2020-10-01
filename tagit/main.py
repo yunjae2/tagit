@@ -132,9 +132,6 @@ def record_data(exp_name, params, dtags, data):
     # Fill empty tags with default values
     params_ = taglist.mkup_record_params(exp_name, params)
 
-    # Update implicit tags
-    taglist.update_implicit(exp_name, params_)
-
     existing = query._get_entities(exp_name, params_, [])
     if len(existing) != 0:
         print("Warning: data overwritten")
@@ -505,8 +502,6 @@ def update_tags(exp_name: str, params: OrderedDict(), uparams: OrderedDict()):
         sys.exit(-1)
 
     uparams_ = OrderedDict((k, [v]) for (k, v) in uparams.items())
-    # Update implicit tags
-    taglist.update_implicit(exp_name, uparams_)
 
     # Update tags
     query._update_row(exp_name, params, uparams)
@@ -549,7 +544,10 @@ def list_vars(exp_name):
 
     print(f"[{exp_name}] List of tags:")
     for k, v in def_params.items():
-        print(f"- {k} ({v})")
+        if len(v) == 0:
+            print(f"- {k}")
+        else:
+            print(f"- {k} (Fixed to: {v})")
 
 
 def list_dtags(exp_name):
@@ -894,7 +892,7 @@ def tag_fixer(args):
     # Update if new variable added
     update_vars(exp_name, params)
 
-    taglist.set_explicit(exp_name, params)
+    taglist.set_default(exp_name, params)
 
 
 def tag_unfixer(args):
@@ -906,7 +904,7 @@ def tag_unfixer(args):
     params = utils.param_dict(param_str)
     validate_unfix_params(exp_name, params)
 
-    taglist.unset_explicit(exp_name, params)
+    taglist.unset_default(exp_name, params)
 
 
 def rename_exp(old, new):

@@ -35,9 +35,9 @@ printf "per-exp test.. "
 
 list=$(tagit list figure)
 list_gt=$'[figure] List of tags:
-- color (green)
-- shape (tetrahedron)
-- weight (5kg)
+- color
+- shape
+- weight
 [figure] List of data categories:
 - raw
 - nr_edges
@@ -62,9 +62,9 @@ echo "A yellow box" | tagit record figure "color=yellow, shape=cube" > /dev/null
 echo "A green ball" | tagit record figure "color=green, shape=sphere" > /dev/null
 
 figure_gt=$'[figure] List of tags:
-- color (blue)
-- shape (sphere)
-- weight (10kg)
+- color (Fixed to: blue)
+- shape
+- weight
 [figure] List of data categories:
 - raw'
 
