@@ -7,17 +7,15 @@ researchers' waste of time on arranging / manipulating / moving the experimental
 * Record shell command output with tags.
 * Report data with specified tags in various format (terminal, csv file, and hierarchical files).
 * Parse recorded data automatically.
-* List tags.
-* Import/export data dump between systems.
 
 
 ### Directory
 - [Installation](#installation)
-- [Basic concepts](#basic-concepts)
 - [Tutorial](#tutorial)
 - [Usage](#usage)
   - [Main commands](#main-commands)
   - [Other commands](#other-commands)
+- [Terminology](#terminology)
   
 
 ## Installation
@@ -54,29 +52,6 @@ After a month, Lisa decides to present her experiment as it is the last week of 
 Unfortunately, she has lost the spreadsheet and what she got is only the raw data itself,
 but now Lisa has no problem in using various utilities.
 However, Lisa now finds a serious problem: what does '8' mean in the directory path?
-
-
-## Basic concepts
-`tagit` has five main concepts: experiments, tags, data, data categories, and parsing rules.
-* An _experiment_ is a set of tagged data.
-Data in the same experiment commonly share a number of tags with different values.
-The name came from scientific methods,
-which usually involves collection of experiment results with different set of variables (which corresponds to tags in `tagit`).
-* A _tag_ is similar to variable in scientific experiments;
-it has a key and multiple values (e.g., "color=red", "color=yellow").
-Since it is quite common for tags to stick to the _optimal_ or _final_ value in experiments, 
-A tag may have the default value (coming soon!)
-* A _data_ is the element of `tagit`.
-Each data belongs to a data category, and may have multiple tags (e.g., "color=red, shape=sphere").
-* A _data category_ describes the characteristic of the recorded data.
-It is similar to tag; however, it is used for parsing recorded data.
-When data is recorded, its category is `raw` by default,
-and the data can be parsed and saved into different categories (e.g., `throughput`, `latency`).
-Experimental results or stats are generally recorded in a single place (a simple example is `/proc/vmstat`, which shows the stats of virtual memory subsystem),
-thus data categories can be useful for parsing necessary information from the whole data.
-* A _parsing rule_ is applied to each recorded data in an experiment to parse it and generate useful data.
-The generated data is saved into the data category specified in the parsing rule.
-Once a parsing rule is registered in an experiment, it is automatically applied to data recorded in the future, as well as the data already recorded.
 
 
 ## Tutorial
@@ -270,6 +245,31 @@ Import experiments and data from `<db_dump>`.
 $ tagit reset [-y]
 ```
 Reset tagit database. `-y` passes all yes to prompts automatically.
+
+
+
+## Terminology
+`tagit` has five main concepts: experiments, tags, data, data categories, and parsing rules.
+* An _experiment_ is a set of tagged data.
+Data in the same experiment commonly share a number of tags with different values.
+The name came from scientific methods,
+which usually involves collection of experiment results with different set of variables (which corresponds to tags in `tagit`).
+* A _tag_ is similar to variable in scientific experiments;
+it has a key and multiple values (e.g., "color=red", "color=yellow").
+Since it is quite common for tags to stick to the _optimal_ or _final_ value in experiments, 
+A tag may have the default value (coming soon!)
+* A _data_ is the element of `tagit`.
+Each data belongs to a data category, and may have multiple tags (e.g., "color=red, shape=sphere").
+* A _data category_ describes the characteristic of the recorded data.
+It is similar to tag; however, it is used for parsing recorded data.
+When data is recorded, its category is `raw` by default,
+and the data can be parsed and saved into different categories (e.g., `throughput`, `latency`).
+Experimental results or stats are generally recorded in a single place (a simple example is `/proc/vmstat`, which shows the stats of virtual memory subsystem),
+thus data categories can be useful for parsing necessary information from the whole data.
+* A _parsing rule_ is applied to each recorded data in an experiment to parse it and generate useful data.
+The generated data is saved into the data category specified in the parsing rule.
+Once a parsing rule is registered in an experiment, it is automatically applied to data recorded in the future, as well as the data already recorded.
+
 
 
 ## Notes
