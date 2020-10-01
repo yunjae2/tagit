@@ -939,7 +939,7 @@ def rename_tag(exp_name, old, new):
 
     # Abort if the new tag name already occupied
     if taglist.tag_exists(exp_name, new):
-        print(f"Error: {new} is already exists")
+        print(f"Error: {new} already exists")
         sys.exit(-1)
 
     taglist.rename_tag(exp_name, old, new)
