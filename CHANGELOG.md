@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## v0.0.8
+- Prohibit multiple records with same tags
+- Add default tag value feature (as well as fix/unfix command)
+- Add command to update tag values
+- Add experiment renaming feature
+- Add tag renaming feature
+- Fix 'None'-printing bug for empty tags
+- Update README
+
+
 ## v0.0.7
 - Change record interface
 - Let data printed synchronously in terminal during recording

@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
         name = "etagit",
-        version = "0.0.7",
+        version = "0.0.8",
         author = "Yunjae Lee",
         author_email = "lyj7694@gmail.com",
         description = "CLI tagging system for experimental data",
