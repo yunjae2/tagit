@@ -206,9 +206,10 @@ $ tagit parse remove <exp_name> [-a] [<rule_id>]
 Remove parsing rule of id `<rule_id>:` from the experiment `<exp_name>`.
 If `-a` is specified, all parsing rules are removed.
 
+
 #### 4. `manage`
 ```
-$ tagit manage [-d] [-r [<tags>]] <exp_name>
+$ tagit manage <exp_name> [-d] [-r [<tags>]]
 ```
 Manages recorded data in <exp_name> space.
 
@@ -226,21 +227,61 @@ $ tagit list [<exp_name>]
 List the experiments. If `<exp_name>` is specified, it lists the name of tags and data categories in the specified experiment instead.
 
 
-#### 2. `export`
+#### 2. `exp`
+##### 2.1. `exp rename`
+```
+$ tagit exp rename <exp_name> <new_name>
+```
+Rename the experiment `<exp_name>` to `<new_name>`.
+
+
+#### 3. `tag`
+##### 3.1. `tag rename`
+```
+$ tagit tag rename <exp_name> <name> <new_name>
+```
+In the experiment `<exp_name>`, rename the tag `<name>` to `<new_name>`.
+
+##### 3.2. `tag fix`
+```
+$ tagit tag fix <exp_name> <tags>
+```
+In the experiment `<exp_name>`, fix the value of tags according to `<tags>`.
+For example, `"color=blue, shape=cube"` fixes the tags `color` and `shape` to `blue` and `cube`, respectively.
+When the value of the tag fixed by this command is not specified, the value is set to the fixed value.
+The fixed values can be overrided by values specified during recording.
+
+##### 3.3. `tag unfix`
+```
+$ tagit tag unfix <exp_name> <tags>
+```
+In the experiment `<exp_name>`, unfix the value of tags according to `<tags>`.
+Tags must be specified without values in `<tags>` (e.g., `"color, shape"`).
+
+##### 3.4. `tag update`
+```
+$ tagit tag update <exp_name> <tags>
+```
+In the experiment `<exp_name>`, update the value of tags according to `<tags>`.
+In `<tags>`, `=` is used for limiting the scope of update, and `->` is used for specifying the value to update.
+For example, `"color=red, shape=sphere, color->blue, volume->10L"` updates `color` to `blue` and `volume` to `10L`, for records with `color=red, shape=sphere`.
+
+
+#### 4. `export`
 ```
 $ tagit export <output_dump>
 ```
 Export all experiment and data to `<output_dump>`.
 
 
-#### 3. `import`
+#### 5. `import`
 ```
 $ tagit import <db_dump>
 ```
 Import experiments and data from `<db_dump>`.
 
 
-#### 4. `reset`
+#### 6. `reset`
 ```
 $ tagit reset [-y]
 ```
