@@ -886,7 +886,7 @@ def resetter(args):
     reset_all(yes)
 
 
-def fixer(args):
+def tag_fixer(args):
     exp_name = args.exp_name
     param_str = args.tags
 
@@ -903,7 +903,7 @@ def fixer(args):
     taglist.set_explicit(exp_name, params)
 
 
-def unfixer(args):
+def tag_unfixer(args):
     exp_name = args.exp_name
     param_str = args.tags
 
@@ -1029,19 +1029,19 @@ def parse_args():
     tag_ren_parser.add_argument('new_name', type=str, help='new tag name')
     tag_ren_parser.set_defaults(worker=tag_renamer)
 
-    # fix command
-    fix_parser = subparsers.add_parser('fix', help='Fix the value of tags')
-    fix_parser.add_argument('exp_name', type=str, help='experiment name')
-    fix_parser.add_argument('tags', type=str, default="",
+    # tag fix command
+    tag_fix_parser = tag_subparsers.add_parser('fix', help='fix the value of tags')
+    tag_fix_parser.add_argument('exp_name', type=str, help='experiment name')
+    tag_fix_parser.add_argument('tags', type=str, default="",
             help='"tags" (e.g., "arch=gpt3, train_set=stack_overflow, test_set=quora")')
-    fix_parser.set_defaults(worker=fixer)
+    tag_fix_parser.set_defaults(worker=tag_fixer)
 
-    # unfix command
-    unfix_parser = subparsers.add_parser('unfix', help='Unfix the value of tags')
-    unfix_parser.add_argument('exp_name', type=str, help='experiment name')
-    unfix_parser.add_argument('tags', type=str, default="",
+    # tag unfix command
+    tag_unfix_parser = tag_subparsers.add_parser('unfix', help='unfix the value of tags')
+    tag_unfix_parser.add_argument('exp_name', type=str, help='experiment name')
+    tag_unfix_parser.add_argument('tags', type=str, default="",
             help='"tags" without values (e.g., "arch, train_set, test_set")')
-    unfix_parser.set_defaults(worker=unfixer)
+    tag_unfix_parser.set_defaults(worker=tag_unfixer)
 
     # Parse command
     par_parser = subparsers.add_parser('parse',

@@ -56,7 +56,7 @@ printf "fixed value test.. "
 
 rm ~/.tagit/tagit.db
 
-tagit fix figure "color=blue" > /dev/null
+tagit tag fix figure "color=blue" > /dev/null
 echo "A red ball" | tagit record figure "color=red, shape=sphere, weight=10kg" > /dev/null
 echo "A yellow box" | tagit record figure "color=yellow, shape=cube" > /dev/null
 echo "A green ball" | tagit record figure "color=green, shape=sphere" > /dev/null
