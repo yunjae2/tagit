@@ -5,9 +5,23 @@ from collections import OrderedDict
 import sys
 
 
+def exists(exp_name):
+    name = utils.mkup_taglist_name(exp_name)
+    if query.table_exists(name):
+        return True
+
+    return False
+
+
 def create(exp_name):
     name = utils.mkup_taglist_name(exp_name)
     query.create_table(name, ["name", "default_val"])
+
+
+def delete(exp_name):
+    validate(exp_name)
+    name = utils.mkup_taglist_name(exp_name)
+    query.drop_table(name)
 
 
 def add_tags(exp_name, params):
@@ -108,3 +122,9 @@ def rename_tag(exp_name, old, new):
     query._update_row(name, {'name': [old]}, {'name': new})
     # Update table
     query._rename_column(exp_name, old, new)
+
+
+def validate(exp_name):
+    if not exists(exp_name):
+        print("Internal error: no such taglist")
+        sys.exit(-1)

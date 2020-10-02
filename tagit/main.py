@@ -3,7 +3,7 @@ from . import utils
 from . import taglist
 from . import dtaglist
 from . import parser
-from . import exp
+from . import experiment
 from .configs import *
 import subprocess
 import os
@@ -14,120 +14,15 @@ import shutil
 from tabulate import tabulate
 from collections import OrderedDict
 
-"""
-Notation
-exp: experiment
-var: variable
-"""
-
-
-def get_exps():
-    tables = query.get_tables()
-    exps = [x for x in tables if utils.is_exp_name(x)]
-
-    return exps
-
-
-def exp_exists(name):
-    if query.table_exists(name):
-        return True
-    return False
-
-
-def create_exp(name):
-    parser_name = utils.mkup_parser_name(name)
-
-    query.create_table(name, [default_dtag])
-    create_parser(parser_name)
-    taglist.create(name)
-
-    print(f"New experiment: [{name}]")
-
-
-def update_vars(name, params):
-    vars_ = list(params.keys())
-    curr_vars = query.get_columns(name)
-    new_params = {}
-
-    for k, v in params.items():
-        if k not in curr_vars:
-            new_params[k] = v
-
-    if new_params:
-        # TODO: Show warning if a data exists before a new variable is added
-        taglist.add_tags(name, new_params)
-        query.new_columns(name, new_params.keys())
-
-        print(f"[{name}] New tag added:")
-        for key in new_params:
-            print(f"- {key}")
-
-
-def dtag_list_exists(name):
-    if query.table_exists(name):
-        return True
-    return False
-
-
-def create_dtag_list(name):
-    query.create_table(name, ["name", "derived", "updated"])
-
-
-def update_dtag_list(name, dtags, derived):
-    dtag_list_name = utils.mkup_dtag_list_name(name)
-
-    if not dtag_list_exists(dtag_list_name):
-        create_dtag_list(dtag_list_name)
-
-    curr_dtag_list = query._get_entities(dtag_list_name, {}, ["name", "derived"])
-    curr_dtags = [x["name"] for x in curr_dtag_list]
-    new_dtags = []
-
-    for dtag in dtags:
-        if dtag not in curr_dtags:
-            new_dtags.append({
-                "name": dtag,
-                "derived": str(derived),
-                "updated": "False"
-                })
-
-    _validate_dtags_derived(curr_dtag_list, dtags, derived)
-    query._add_entities(dtag_list_name, new_dtags)
-
-
-def update_dtags(name, dtags, derived=False):
-    curr_cols = query.get_columns(name)
-    new_dtags = []
-
-    for dtag in dtags:
-        if dtag not in curr_cols:
-            new_dtags.append(dtag)
-
-    query.new_columns(name, new_dtags)
-
-    update_dtag_list(name, dtags, derived)
-
-    if new_dtags:
-        print(f"[{name}] New data category: ")
-        for dtag in new_dtags:
-            dtag_name = utils.dtag_name(dtag)
-            print(f"- {dtag_name}")
-
-
-def mark_dtags_updated(exp_name, dtags):
-    dtag_list_name = utils.mkup_dtag_list_name(exp_name)
-    cond_vals = [({"name": [x]}, {"updated": "True"}) for x in dtags]
-    query._update_rows(dtag_list_name, cond_vals)
-
 
 def record_data(exp_name, params, dtags, data):
     # Create experiment if it does not exist
-    if not exp_exists(exp_name):
-        create_exp(exp_name)
+    if not experiment.exists(exp_name):
+        experiment.create(exp_name)
 
     # Update if new variable added
-    update_vars(exp_name, params)
-    update_dtags(exp_name, dtags)
+    experiment.update_tags(exp_name, params)
+    experiment.update_dtags(exp_name, dtags)
 
     # Fill empty tags with default values
     params_ = taglist.mkup_record_params(exp_name, params)
@@ -138,37 +33,7 @@ def record_data(exp_name, params, dtags, data):
         query._delete_rows(exp_name, params_)
 
     # Record data to the experiment
-    query.add_entity(exp_name, params_, dtags, data)
-
-    # Mark updated data categories for lazy parsing
-    mark_dtags_updated(exp_name, dtags)
-
-
-def _validate_dtags_derived(curr_dtags, dtags, derived):
-    # Abort if recording to derived data category or deriving recorded data category
-    for curr_dtag in curr_dtags:
-        name_ = curr_dtag["name"]
-        derived_ = curr_dtag["derived"]
-
-        if name_ in dtags and derived_ != str(derived):
-            if derived_ == "True":
-                print("Error: recording to a derived data category")
-            elif derived_ == "False":
-                print("Error: deriving a recorded data category directly")
-            else:
-                print("Internal error: wrong derived value")
-            sys.exit(-1)
-
-
-
-def validate_dtags_derived(name, dtags, derived):
-    dtag_list_name = utils.mkup_dtag_list_name(name)
-
-    if not dtag_list_exists(dtag_list_name):
-        create_dtag_list(dtag_list_name)
-
-    curr_dtags = query._get_entities(dtag_list_name, {}, ["name", "derived"])
-    _validate_dtags_derived(curr_dtags, dtags, derived)
+    experiment.add_data(exp_name, params_, dtags, data)
 
 
 def validate_dtags(name, dtags, derived):
@@ -187,7 +52,8 @@ def validate_dtags(name, dtags, derived):
                 print(f"Error: the name of a category cannot contain '{bad_value}'")
                 sys.exit(-1)
 
-    validate_dtags_derived(name, dtags, derived)
+    if dtaglist.exists(name):
+        dtaglist.validate_derived(name, dtags, derived)
 
 
 def validate_record_params(exp_name, params, dtags):
@@ -247,6 +113,57 @@ def validate_fix_params(exp_name, params):
                 sys.exit(-1)
 
 
+def validate_update_params(exp_name, params, uparams):
+    cols = query.get_columns(exp_name)
+    tags = [x for x in cols if not utils.is_dtag(x)]
+
+    for param in params:
+        if param not in tags:
+            print("Error: no such tag")
+            print(f"List of tags in {exp_name}:")
+            for tag in tags:
+                print(f"- {tag}")
+            sys.exit(-1)
+
+    for key in uparams.keys():
+        if utils.is_prohibited_name(key):
+            print(f"Error: tag name cannot start with {tagit_prefix}")
+            sys.exit(-1)
+
+    bad_values = ["*", "|", ",", "\""]
+    for value in uparams.values():
+        for bad_value in bad_values:
+            if bad_value in value:
+                print(f"Error: the value of a tag cannot contain '{bad_value}'")
+                sys.exit(-1)
+
+
+def validate_params(exp_name, params, dtags):
+    cols = query.get_columns(exp_name)
+    tags = [x for x in cols if not utils.is_dtag(x)]
+    curr_dtags = [x for x in cols if utils.is_dtag(x)]
+
+    for param in params:
+        if param not in tags:
+            print("Error: no such tag")
+            print(f"List of tags in {exp_name}:")
+            for tag in tags:
+                print(f"- {tag}")
+            sys.exit(-1)
+
+    cols = tags
+    for dtag in dtags:
+        if dtag == "*":
+            continue
+        if dtag not in curr_dtags:
+            print("Error: no such category")
+            print(f"List of categories in {exp_name}:")
+            for curr_dtag in curr_dtags:
+                dtag_name = utils.dtag_name(curr_dtag)
+                print(f"- {dtag_name}")
+            sys.exit(-1)
+
+
 def get_from_stdin(quiet: bool):
     if quiet:
         data = sys.stdin.read()
@@ -282,7 +199,7 @@ def recorder(args):
     record_data(exp_name, params, dtags, data)
 
 
-def refine_dtag_names(data):
+def _refine_dtag_names(data):
     refined = []
     for data_single in data:
         refined_single = OrderedDict()
@@ -300,7 +217,7 @@ def refine_dtag_names(data):
 
 
 def report_csv(exp_name: str, params: OrderedDict, data: [], filename: str):
-    data = refine_dtag_names(data)
+    data = _refine_dtag_names(data)
 
     with open(filename, 'w', newline='') as csvfile:
         fieldnames = list(data[0].keys())
@@ -373,43 +290,6 @@ def report_std(exp_name: str, params: OrderedDict, data: []):
         print(data_string)
 
 
-def check_exp_exists(exp_name):
-    exps = get_exps()
-    if exp_name not in exps:
-        print("Error: no such experiment")
-        print("List of experiments:")
-        for exp in exps:
-            print(f"- {exp}")
-
-        sys.exit(-1)
-
-
-def validate_params(exp_name, params, dtags):
-    cols = query.get_columns(exp_name)
-    tags = [x for x in cols if not utils.is_dtag(x)]
-    curr_dtags = [x for x in cols if utils.is_dtag(x)]
-
-    for param in params:
-        if param not in tags:
-            print("Error: no such tag")
-            print(f"List of tags in {exp_name}:")
-            for tag in tags:
-                print(f"- {tag}")
-            sys.exit(-1)
-
-    cols = tags
-    for dtag in dtags:
-        if dtag == "*":
-            continue
-        if dtag not in curr_dtags:
-            print("Error: no such category")
-            print(f"List of categories in {exp_name}:")
-            for curr_dtag in curr_dtags:
-                dtag_name = utils.dtag_name(curr_dtag)
-                print(f"- {dtag_name}")
-            sys.exit(-1)
-
-
 def reporter(args):
     # TODO: Implement the body
     # Features
@@ -430,14 +310,14 @@ def reporter(args):
     params = utils.param_dict(param_str)
     dtags = utils.mkup_dtags(dtag_name_str)
 
-    check_exp_exists(exp_name)
+    experiment.validate(exp_name)
     validate_params(exp_name, params, dtags)
 
     # Lazy parsing
-    run_parsing_graph(exp_name)
+    experiment.run_parser(exp_name)
 
     # data: [{tag1: val1, tag2: val2, ..., dtag1: data1, ...}, {...}, ...]
-    data = exp.get_data(exp_name, params, dtags)
+    data = experiment.get_data(exp_name, params, dtags)
 
     if csv_file:
         if csv_file == "_use_exp_name.csv":
@@ -447,64 +327,6 @@ def reporter(args):
         report_hrchy(exp_name, params, data, hrchy_path)
     else:
         report_std(exp_name, params, data)
-
-
-def delete_data(exp_name: str, params: OrderedDict()):
-    query.delete_rows(exp_name, params)
-
-
-def delete_exp(exp_name: str):
-    parser_name = utils.mkup_parser_name(exp_name)
-    dtag_list_name = utils.mkup_dtag_list_name(exp_name)
-
-    query.drop_table(exp_name)
-
-    if parser_exists(parser_name):
-        query.drop_table(parser_name)
-    if dtag_list_exists(dtag_list_name):
-        query.drop_table(dtag_list_name)
-
-
-def validate_update_params(exp_name, params, uparams):
-    cols = query.get_columns(exp_name)
-    tags = [x for x in cols if not utils.is_dtag(x)]
-
-    for param in params:
-        if param not in tags:
-            print("Error: no such tag")
-            print(f"List of tags in {exp_name}:")
-            for tag in tags:
-                print(f"- {tag}")
-            sys.exit(-1)
-
-    for key in uparams.keys():
-        if utils.is_prohibited_name(key):
-            print(f"Error: tag name cannot start with {tagit_prefix}")
-            sys.exit(-1)
-
-    bad_values = ["*", "|", ",", "\""]
-    for value in uparams.values():
-        for bad_value in bad_values:
-            if bad_value in value:
-                print(f"Error: the value of a tag cannot contain '{bad_value}'")
-                sys.exit(-1)
-
-
-def update_tags(exp_name: str, params: OrderedDict(), uparams: OrderedDict()):
-    # Update if new variable added
-    update_vars(exp_name, uparams)
-
-    # Abort if the record with the same tags already exists
-    params_after = utils.param_after_update(params, uparams)
-    existing = query._get_entities(exp_name, params_after, [])
-    if len(existing) != 0:
-        print("Error: conflict with existing record")
-        sys.exit(-1)
-
-    uparams_ = OrderedDict((k, [v]) for (k, v) in uparams.items())
-
-    # Update tags
-    query._update_row(exp_name, params, uparams)
 
 
 def manager(args):
@@ -522,21 +344,15 @@ def manager(args):
     delete = args.d
     delete_param_str = args.r
 
-    check_exp_exists(exp_name)
+    experiment.validate(exp_name)
 
     if delete:
-        delete_exp(exp_name)
+        experiment.delete(exp_name)
 
     elif delete_param_str:
         params = utils.param_dict(delete_param_str)
         validate_params(exp_name, params, [])
-        delete_data(exp_name, params)
-
-
-def list_exps():
-    exps = get_exps()
-    for exp in exps:
-        print(exp)
+        experiment.delete_data(exp_name, params)
 
 
 def list_vars(exp_name):
@@ -567,15 +383,15 @@ def lister(args):
     exp_name = args.exp_name
 
     if exp_name:
-        check_exp_exists(exp_name)
+        experiment.validate(exp_name)
         list_vars(exp_name)
         list_dtags(exp_name)
     else:
-        list_exps()
+        experiment._list()
 
 
 def load_dump(filename, yes):
-    exps = get_exps()
+    exps = experiment.get()
     if exps and not yes:
         answer = input("Existing records will be deleted; import? [y/N]: ")
         if answer.strip().lower() != "y":
@@ -615,22 +431,12 @@ def validate_src_dtag(exp_name, dtag_src):
         sys.exit(-1)
 
 
-def parser_exists(parser_name) -> bool:
-    if query.table_exists(parser_name):
-        return True
-    return False
-
-
-def create_parser(parser_name):
-    query.create_table(parser_name, ["rule", "src_dtag", "dest_dtag", "updated"])
-
-
 def add_parsing_rule(exp_name, rule, dtag_src, dtag_dest):
     parser_name = utils.mkup_parser_name(exp_name)
 
     # Create parser for the experiment if it has not been created yet
-    if not parser_exists(parser_name):
-        create_parser(parser_name)
+    if not parser.exists(exp_name):
+        parser.create(parser_name)
 
     params = OrderedDict([
         ("rule", rule),
@@ -639,150 +445,6 @@ def add_parsing_rule(exp_name, rule, dtag_src, dtag_dest):
         ("updated", "True")
         ])
     query._add_entity(parser_name, params)
-
-
-def build_parsing_graph(exp_name: str):
-    parser_name = utils.mkup_parser_name(exp_name)
-    if not parser_exists(parser_name):
-        return {}
-
-    graph = {}
-    rules = query._get_entities(parser_name, {}, [])
-    for rule in rules:
-        src = rule['src_dtag']
-        dest = rule['dest_dtag']
-        cmd = rule['rule']
-        updated = rule['updated']
-        edge = {'src': src, 'cmd': cmd, 'updated': updated}
-
-        if dest in graph:
-            graph[dest].append(edge)
-        else:
-            graph[dest] = [edge]
-
-    return graph
-
-
-def get_dtag_status(exp_name: str):
-    dtag_list_name = utils.mkup_dtag_list_name(exp_name)
-    if not dtag_list_exists(dtag_list_name):
-        return []
-
-    curr_dtag_list = query._get_entities(dtag_list_name, {}, ["name", "updated"])
-    dtag_status = OrderedDict((x["name"], {"updated": x["updated"] == "True", \
-            "up-to-date": False}) for x in curr_dtag_list)
-
-    return dtag_status
-
-
-def parse_data(exp_name, src, dest, cmd, params, data):
-    if data is None:
-        return "\n"
-
-    try:
-        ret = subprocess.run(cmd, input=data, capture_output=True,
-                shell=True, text=True)
-    except TypeError:
-        # Python < 3.7
-        ret = subprocess.run(cmd, input=data, stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE, shell=True, universal_newlines=True)
-
-    ret_stdout = ret.stdout
-    ret_stderr = ret.stderr
-
-    if ret_stderr:
-        if ret_stderr.endswith('\n'):
-            ret_stderr = ret_stderr[:-1]
-        print(ret_stderr)
-
-    return ret_stdout
-
-
-def append_data(exp_name, params, dtag, new_data):
-    query._append_row(exp_name, params, {dtag: new_data})
-
-
-def run_parsing_rule(exp_name, src, dest, cmd):
-    records = query._get_entities(exp_name, {}, [])
-    for record in records:
-        data = record[src]
-        params = OrderedDict((k, [v]) for (k, v) in record.items() \
-                if not utils.is_prohibited_name(k))
-        parsed = parse_data(exp_name, src, dest, cmd, params, data)
-        append_data(exp_name, params, dest, parsed)
-
-
-def clear_dtag_data(exp_name, dtag):
-    query._update_row(exp_name, {}, {dtag: ""})
-
-
-def _run_backward_each_node(exp_name, graph, dtags, node):
-    # root sources
-    if node not in graph:
-        dtags[node]["up-to-date"] = True
-        return dtags[node]["updated"]
-
-    edges = graph[node]
-    need_update = False
-    for edge in edges:
-        src = edge["src"]
-        rule_updated = (edge["updated"] == "True")
-        need_update |= rule_updated
-        need_update |= _run_backward_each_node(exp_name, graph, dtags, src)
-
-    if need_update:
-        clear_dtag_data(exp_name, node)
-        for edge in edges:
-            src = edge["src"]
-            cmd = edge["cmd"]
-            run_parsing_rule(exp_name, src, node, cmd)
-
-    dtags[node]["up-to-date"] = True
-    return need_update
-
-
-def _run_backward_each_leaf(exp_name, graph, dtags, leaf):
-    _run_backward_each_node(exp_name, graph, dtags, leaf)
-
-
-def run_parsing_graph_backward(exp_name, graph, dtags):
-    if not graph or not dtags:
-        return
-
-    leaves = [x for x in dtags]
-    for dtag, edges in graph.items():
-        for edge in edges:
-            src = edge["src"]
-            if src in leaves:
-                leaves.remove(src)
-
-    for leaf in leaves:
-        _run_backward_each_leaf(exp_name, graph, dtags, leaf)
-
-
-def reset_dtag_status(exp_name: str):
-    dtag_list_name = utils.mkup_dtag_list_name(exp_name)
-    if not dtag_list_exists(dtag_list_name):
-        return
-
-    query._update_row(dtag_list_name, {}, {"updated": "False"})
-
-
-def reset_rule_status(exp_name: str):
-    parser_name = utils.mkup_parser_name(exp_name)
-    if not parser_exists(parser_name):
-        return
-
-    query._update_row(parser_name, {}, {"updated": "False"})
-
-
-def run_parsing_graph(exp_name):
-    parsing_graph = build_parsing_graph(exp_name)
-    dtag_status = get_dtag_status(exp_name)
-    run_parsing_graph_backward(exp_name, parsing_graph, dtag_status)
-    # Reset 'updated' of each dtag to False
-    reset_dtag_status(exp_name)
-    reset_rule_status(exp_name)
 
 
 def parse_adder(args):
@@ -794,12 +456,12 @@ def parse_adder(args):
     dtag_dest = utils.mkup_dtag(dtag_name_dest)
     dtag_src = utils.mkup_dtag(dtag_name_src)
 
-    if not exp_exists(exp_name):
-        create_exp(exp_name)
+    if not experiment.exists(exp_name):
+        experiment.create(exp_name)
 
     validate_src_dtag(exp_name, dtag_src)
 
-    update_dtags(exp_name, [dtag_dest], derived=True)
+    experiment.update_dtags(exp_name, [dtag_dest], derived=True)
 
     # Add parsing rule to experiment
     rule_id = add_parsing_rule(exp_name, rule, dtag_src, dtag_dest)
@@ -808,7 +470,7 @@ def parse_adder(args):
 def list_rules(exp_name):
     parser_name = utils.mkup_parser_name(exp_name)
 
-    if parser_exists(parser_name):
+    if parser.exists(exp_name):
         data = query._get_entities(parser_name, {}, [])
     else:
         data = []
@@ -830,7 +492,7 @@ def list_rules(exp_name):
 def parse_lister(args):
     exp_name = args.exp_name
 
-    check_exp_exists(exp_name)
+    experiment.validate(exp_name)
     list_rules(exp_name)
 
 
@@ -853,7 +515,7 @@ def parse_remover(args):
     remove_all = args.all
     rule_id = args.rule_id
 
-    check_exp_exists(exp_name)
+    experiment.validate(exp_name)
     if remove_all:
         remove_all_rules(exp_name)
     else:
@@ -886,11 +548,11 @@ def tag_fixer(args):
     validate_fix_params(exp_name, params)
 
     # Create experiment if it does not exist
-    if not exp_exists(exp_name):
-        create_exp(exp_name)
+    if not experiment.exists(exp_name):
+        experiment.create(exp_name)
 
     # Update if new variable added
-    update_vars(exp_name, params)
+    experiment.update_tags(exp_name, params)
 
     taglist.set_default(exp_name, params)
 
@@ -899,27 +561,12 @@ def tag_unfixer(args):
     exp_name = args.exp_name
     param_str = args.tags
 
-    check_exp_exists(exp_name)
+    experiment.validate(exp_name)
 
     params = utils.param_dict(param_str)
     validate_unfix_params(exp_name, params)
 
     taglist.unset_default(exp_name, params)
-
-
-def rename_exp(old, new):
-    # Check the exp existence
-    check_exp_exists(old)
-
-    # Abort if the new exp name already occupied
-    if exp_exists(new):
-        print(f"Error: {new} already exists")
-        sys.exit(-1)
-
-    exp.rename(old, new)
-    dtaglist.rename(old, new)
-    parser.rename(old, new)
-    taglist.rename(old, new)
 
 
 def rename_tag(exp_name, old, new):
@@ -943,7 +590,7 @@ def exp_renamer(args):
     old_name = args.name
     new_name = args.new_name
 
-    rename_exp(old_name, new_name)
+    experiment.rename(old_name, new_name)
 
 
 def tag_renamer(args):
@@ -951,7 +598,7 @@ def tag_renamer(args):
     old_name = args.name
     new_name = args.new_name
 
-    check_exp_exists(exp_name)
+    experiment.validate(exp_name)
 
     rename_tag(exp_name, old_name, new_name)
 
@@ -960,11 +607,11 @@ def tag_updater(args):
     exp_name = args.exp_name
     param_str = args.tags
 
-    check_exp_exists(exp_name)
+    experiment.validate(exp_name)
 
     params, uparams = utils.param_for_update(param_str)
     validate_update_params(exp_name, params, uparams)
-    update_tags(exp_name, params, uparams)
+    experiment.update_tag_values(exp_name, params, uparams)
 
 
 def parse_args():

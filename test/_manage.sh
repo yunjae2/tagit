@@ -98,7 +98,7 @@ echo "A red ball" | tagit record figure "color=red, shape=sphere, weight=10kg" >
 echo "A yellow box" | tagit record figure "color=yellow, shape=cube, weight=10kg" > /dev/null
 echo "A green ball" | tagit record figure "color=green, shape=sphere, weight=5kg" > /dev/null
 
-tagit manage figure -d
+tagit manage figure -d > /dev/null
 report=$(tagit report figure)
 report_gt=$'Error: no such experiment
 List of experiments:'
