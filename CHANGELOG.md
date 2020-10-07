@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## v0.0.9
+- Fix bug that parse-remove command not working in some envs
+- Update README
+
 ## v0.0.8
 - Prohibit multiple records with same tags
 - Add default tag value feature (as well as fix/unfix command)
