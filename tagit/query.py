@@ -293,10 +293,12 @@ def delete_rows(name: str, params: OrderedDict()):
 def _delete_rows(table: str, conditions: OrderedDict(), limit=None, offset=0):
     sql = f"DELETE FROM {table}"
 
-    sql = sql + __where(conditions)
-
     if limit:
-        sql = sql + f" LIMIT {limit} OFFSET {offset}"
+        sql = sql + f" WHERE rowid IN (SELECT rowid FROM {table}"
+        sql = sql + __where(conditions)
+        sql = sql + f" LIMIT {limit} OFFSET {offset})"
+    else:
+        sql = sql + __where(conditions)
 
     conn = create_connection(db_file)
     c = conn.cursor()
