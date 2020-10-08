@@ -191,7 +191,7 @@ def validate(name):
         sys.exit(-1)
 
 
-def _list():
+def do_list():
     exps = get()
     for exp in exps:
         print(exp)

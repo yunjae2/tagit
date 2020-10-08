@@ -378,7 +378,7 @@ def lister(args):
         list_vars(exp_name)
         list_dtags(exp_name)
     else:
-        experiment._list()
+        experiment.do_list()
 
 
 def load_dump(filename, yes):
