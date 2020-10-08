@@ -148,3 +148,6 @@ cython_debug/
 
 # db dump files
 *.sql
+
+# tag files
+tags
