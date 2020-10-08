@@ -17,6 +17,8 @@ def create(exp_name):
     name = utils.mkup_dtag_list_name(exp_name)
     query.create_table(name, ["name", "derived", "updated"])
 
+    update(exp_name, [default_dtag], False)
+
 
 def delete(exp_name):
     validate(exp_name)
@@ -28,7 +30,7 @@ def rename(old_exp_name, new_exp_name):
     old_name = utils.mkup_dtag_list_name(old_exp_name)
     new_name = utils.mkup_dtag_list_name(new_exp_name)
 
-    query._rename_table(old_name, new_name)
+    query.rename_table(old_name, new_name)
 
 
 def update(exp_name, dtags, derived):
@@ -36,7 +38,7 @@ def update(exp_name, dtags, derived):
 
     validate(exp_name)
 
-    curr_dtag_list = query._get_entities(name, {}, ["name", "derived"])
+    curr_dtag_list = query.get_entities(name, {}, ["name", "derived"])
     curr_dtags = [x["name"] for x in curr_dtag_list]
     new_dtags = []
 
@@ -49,7 +51,7 @@ def update(exp_name, dtags, derived):
                 })
 
     _validate_derived(curr_dtag_list, dtags, derived)
-    query._add_entities(name, new_dtags)
+    query.add_entities(name, new_dtags)
 
 
 def validate(exp_name):
@@ -79,7 +81,7 @@ def validate_derived(exp_name, dtags, derived):
 
     validate(exp_name)
 
-    curr_dtags = query._get_entities(name, {}, ["name", "derived"])
+    curr_dtags = query.get_entities(name, {}, ["name", "derived"])
     _validate_derived(curr_dtags, dtags, derived)
 
 
@@ -88,7 +90,7 @@ def get_status(exp_name: str):
     if not exists(exp_name):
         return []
 
-    curr_dtag_list = query._get_entities(name, {}, ["name", "updated"])
+    curr_dtag_list = query.get_entities(name, {}, ["name", "updated"])
     dtag_status = OrderedDict((x["name"], {"updated": x["updated"] == "True", \
             "up-to-date": False}) for x in curr_dtag_list)
 
@@ -100,10 +102,22 @@ def reset_status(exp_name: str):
     if not exists(exp_name):
         return
 
-    query._update_row(dtag_list_name, {}, {"updated": "False"})
+    query.update_row(dtag_list_name, {}, {"updated": "False"})
 
 
 def mark_dtags_updated(exp_name, dtags):
     name = utils.mkup_dtag_list_name(exp_name)
     cond_vals = [({"name": [x]}, {"updated": "True"}) for x in dtags]
-    query._update_rows(name, cond_vals)
+    query.update_rows(name, cond_vals)
+
+
+def get_dtags(exp_name, internal=True):
+    name = utils.mkup_dtag_list_name(exp_name)
+    dtaglist = query.get_entities(name, {}, ["name"])
+
+    if internal:
+        dtags = [x["name"] for x in dtaglist]
+    else:
+        dtags = [utils.dtag_name(x["name"]) for x in dtaglist]
+
+    return dtags

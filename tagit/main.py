@@ -27,11 +27,6 @@ def record_data(exp_name, params, dtags, data):
     # Fill empty tags with default values
     params_ = taglist.mkup_record_params(exp_name, params)
 
-    existing = query._get_entities(exp_name, params_, [])
-    if len(existing) != 0:
-        print("Warning: data overwritten")
-        query._delete_rows(exp_name, params_)
-
     # Record data to the experiment
     experiment.add_data(exp_name, params_, dtags, data)
 
@@ -77,8 +72,7 @@ def validate_record_params(exp_name, params, dtags):
 
 
 def validate_unfix_params(exp_name, params):
-    cols = query.get_columns(exp_name)
-    tags = [x for x in cols if not utils.is_dtag(x)]
+    tags = taglist.get_tags(exp_name)
 
     for param in params:
         if param not in tags:
@@ -114,8 +108,7 @@ def validate_fix_params(exp_name, params):
 
 
 def validate_update_params(exp_name, params, uparams):
-    cols = query.get_columns(exp_name)
-    tags = [x for x in cols if not utils.is_dtag(x)]
+    tags = taglist.get_tags(exp_name)
 
     for param in params:
         if param not in tags:
@@ -139,9 +132,8 @@ def validate_update_params(exp_name, params, uparams):
 
 
 def validate_params(exp_name, params, dtags):
-    cols = query.get_columns(exp_name)
-    tags = [x for x in cols if not utils.is_dtag(x)]
-    curr_dtags = [x for x in cols if utils.is_dtag(x)]
+    tags = taglist.get_tags(exp_name)
+    curr_dtags = dtaglist.get_dtags(exp_name)
 
     for param in params:
         if param not in tags:
@@ -368,8 +360,7 @@ def list_vars(exp_name):
 
 def list_dtags(exp_name):
     # TODO: separate derived and not derived ones
-    cols = query.get_columns(exp_name)
-    dtags = [utils.dtag_name(x) for x in cols if utils.is_dtag(x)]
+    dtags = dtaglist.get_dtags(exp_name, internal=False)
 
     print(f"[{exp_name}] List of data categories:")
     for dtag in dtags:
@@ -423,28 +414,11 @@ def exporter(args):
 
 
 def validate_src_dtag(exp_name, dtag_src):
-    cols = query.get_columns(exp_name)
-    curr_dtags = [x for x in cols if utils.is_dtag(x)]
+    curr_dtags = dtaglist.get_dtags(exp_name)
 
     if dtag_src not in curr_dtags:
         print("Error: source data category does not exist")
         sys.exit(-1)
-
-
-def add_parsing_rule(exp_name, rule, dtag_src, dtag_dest):
-    parser_name = utils.mkup_parser_name(exp_name)
-
-    # Create parser for the experiment if it has not been created yet
-    if not parser.exists(exp_name):
-        parser.create(parser_name)
-
-    params = OrderedDict([
-        ("rule", rule),
-        ("src_dtag", dtag_src),
-        ("dest_dtag", dtag_dest),
-        ("updated", "True")
-        ])
-    query._add_entity(parser_name, params)
 
 
 def parse_adder(args):
@@ -464,16 +438,11 @@ def parse_adder(args):
     experiment.update_dtags(exp_name, [dtag_dest], derived=True)
 
     # Add parsing rule to experiment
-    rule_id = add_parsing_rule(exp_name, rule, dtag_src, dtag_dest)
+    parser.add(exp_name, rule, dtag_src, dtag_dest)
 
 
 def list_rules(exp_name):
-    parser_name = utils.mkup_parser_name(exp_name)
-
-    if parser.exists(exp_name):
-        data = query._get_entities(parser_name, {}, [])
-    else:
-        data = []
+    data = parser.get(exp_name)
 
     headers = ["id", "rule", "src", "dest", "updated"]
 
@@ -496,30 +465,17 @@ def parse_lister(args):
     list_rules(exp_name)
 
 
-def remove_all_rules(exp_name):
-    parser_name = utils.mkup_parser_name(exp_name)
-    query._delete_rows(parser_name, OrderedDict([]))
-
-
-def remove_rule(exp_name, rule_id):
-    # TODO: support multi-valued rule_id
-    if rule_id is None:
-        print("Error: no parsing rule id is provided")
-        sys.exit(-1)
-    parser_name = utils.mkup_parser_name(exp_name)
-    query._delete_rows(parser_name, OrderedDict([]), offset=rule_id, limit=1)
-
-
 def parse_remover(args):
     exp_name = args.exp_name
     remove_all = args.all
     rule_id = args.rule_id
 
     experiment.validate(exp_name)
+
     if remove_all:
-        remove_all_rules(exp_name)
+        parser.remove_all_rules(exp_name)
     else:
-        remove_rule(exp_name, rule_id)
+        parser.remove_rule(exp_name, rule_id)
 
 
 def reset_all(yes: bool):

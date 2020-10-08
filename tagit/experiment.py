@@ -47,7 +47,7 @@ def delete(name: str):
 
 
 def _rename(old, new):
-    query._rename_table(old, new)
+    query.rename_table(old, new)
 
 
 def rename(old, new):
@@ -67,7 +67,26 @@ def rename(old, new):
 
 def get_data(name, params, dtags):
     # data: [{tag1: val1, tag2: val2, ..., dtag1: data1, ...}, {...}, ...]
-    data = query.get_entities(name, params, dtags)
+    tags = taglist.get_tags(name)
+    if dtags[0] == "*":
+        dtags = dtaglist.get_dtags(name)
+    conds = params
+    cols = tags + dtags
+    entities = query.get_entities(name, conds, cols)
+
+    data = []
+    for entity in entities:
+        # Order by params
+        # TODO: handle error for wrong params
+        ordered = OrderedDict()
+        for key in params:
+            ordered[key] = entity.pop(key)
+        ordered.update(entity)
+        for dtag in dtags:
+            ordered.move_to_end(dtag)
+
+        data.append(ordered)
+
     for dat in data:
         for key in dat:
             if dat[key] == None:
@@ -76,15 +95,26 @@ def get_data(name, params, dtags):
     return data
 
 
-def add_data(exp_name, params, dtags, data):
-    query.add_entity(exp_name, params, dtags, data)
+def add_data(name, params, dtags, data):
+    existing = query.get_entities(name, params, [])
+    if len(existing) != 0:
+        print("Warning: data overwritten")
+        query.delete_rows(name, params)
+
+    entity = OrderedDict()
+    for key, mvalue in params.items():
+        entity[key] = mvalue[0]
+    for dtag in dtags:
+        entity[dtag] = data
+
+    query.add_entity(name, entity)
 
     # Mark updated data categories for lazy parsing
-    dtaglist.mark_dtags_updated(exp_name, dtags)
+    dtaglist.mark_dtags_updated(name, dtags)
 
 
 def _append_data(exp_name, params, dtag, data):
-    query._append_row(exp_name, params, {dtag: data})
+    query.append_row(exp_name, params, {dtag: data})
 
 
 def delete_data(exp_name: str, params: OrderedDict()):
@@ -116,7 +146,7 @@ def update_tag_values(exp_name: str, params: OrderedDict(), uparams: OrderedDict
 
     # Abort if the record with the same tags already exists
     params_after = utils.param_after_update(params, uparams)
-    existing = query._get_entities(exp_name, params_after, [])
+    existing = query.get_entities(exp_name, params_after, [])
     if len(existing) != 0:
         print("Error: conflict with existing record")
         sys.exit(-1)
@@ -124,7 +154,7 @@ def update_tag_values(exp_name: str, params: OrderedDict(), uparams: OrderedDict
     uparams_ = OrderedDict((k, [v]) for (k, v) in uparams.items())
 
     # Update tags
-    query._update_row(exp_name, params, uparams)
+    query.update_row(exp_name, params, uparams)
 
 
 def update_dtags(name, dtags, derived=False):
@@ -147,7 +177,7 @@ def update_dtags(name, dtags, derived=False):
 
 
 def clear_dtag(exp_name, dtag):
-    query._update_row(exp_name, {}, {dtag: ""})
+    query.update_row(exp_name, {}, {dtag: ""})
 
 
 def validate(name):
@@ -168,7 +198,7 @@ def _list():
 
 
 def _run_parsing_rule(exp_name, src, dest, cmd):
-    records = query._get_entities(exp_name, {}, [])
+    records = query.get_entities(exp_name, {}, [])
     for record in records:
         data = record[src]
         params = OrderedDict((k, [v]) for (k, v) in record.items() \

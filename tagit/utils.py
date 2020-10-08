@@ -23,6 +23,8 @@ def param_dict(param_str: str) -> OrderedDict():
     return params
 
 
+# params: params for choosing records
+# uparams: params to be updated
 def param_for_update(param_str: str) -> (OrderedDict(), OrderedDict()):
     param_list = param_str.split(",")
     params = OrderedDict()
