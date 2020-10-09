@@ -5,6 +5,26 @@ from collections import OrderedDict
 import subprocess
 import sys
 
+'''
+parser table
+
+Desc: Maintains metadata for parsing rules
+
+Layout:
+
+             rule             |    src_dtag     |      dest_dtag      | updated
+------------------------------+-----------------+---------------------+--------
+ awk '/^IOPS/{print \$NF}'    | _tagit_data_raw | _tagit_data_iops    | False
+ awk '/^latency/{print \$NF}' | _tagit_data_raw | _tagit_data_latency | True
+
+Columns:
+- name: The name of a tag
+- src_dtag: The source dtag from which the rule will get input
+- dest_dtag: The destination dtag to which the rule output will be saved
+- updated: Has the rule been updated or newly added since the last parsing,
+           so the parsing rules affected by the rule cannot skip during report?
+
+'''
 
 def _exists(name):
     if query.table_exists(name):

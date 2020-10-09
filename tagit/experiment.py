@@ -7,6 +7,25 @@ from . import dtaglist
 from collections import OrderedDict
 import sys
 
+'''
+experiment table
+
+Desc: The main table for an experiment that holds the data
+
+Layout:
+
+  storage  |  mem  |      _tagit_data_raw      | _tagit_data_iops | _tagit_data_latency
+-----------+-------+---------------------------+---------------------------------------
+ sata_ssd  | 16GB  | IOPS: 20K\nlatency: 100us | 20K              | 100us
+ nvme_ssd  | 16GB  | IOPS: 40K\nlatency: 10us  | 40K              | 10us
+ nvme_ssd  | 32GB  | IOPS: 60K\nlatency: 10us  | 60K              | 10us
+
+Components:
+- column: A tag or dtag; columns starting with '_tagit_data_' is dtag columns.
+- row: Each recorded data as well as parsed results (in dtag columns)
+
+'''
+
 
 def exists(name):
     if query.table_exists(name):

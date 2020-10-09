@@ -4,6 +4,28 @@ from . import utils
 from collections import OrderedDict
 import sys
 
+'''
+dtaglist table
+
+Desc: Maintains metadata for dtags (data categories)
+
+Layout:
+
+         name        | derived | updated
+---------------------+---------+---------
+ _tagit_data_raw     | False   | True
+ _tagit_data_iops    | True    | False
+ _tagit_data_latency | True    | False
+
+Columns:
+- name: The internal name of a dtag
+- derived: Is the dtag derived by a parsing rule? (T/F)
+- updated: (non-derived dtag only) Has the value of the dtag been updated or
+           has the dtag been newly added since the last parsing, so the
+           parsers affected by the dtag cannot skip during report?
+
+'''
+
 
 def exists(exp_name):
     name = utils.mkup_dtag_list_name(exp_name)

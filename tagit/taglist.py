@@ -4,6 +4,24 @@ from . import utils
 from collections import OrderedDict
 import sys
 
+'''
+taglist table
+
+Desc: Maintains metadata for tags
+
+Layout:
+
+   name  | default_val
+---------+-------------
+ storage |
+ mem     | 16GB
+
+Columns:
+- name: The name of a tag
+- default_val: The default value of the tag
+
+'''
+
 
 def exists(exp_name):
     name = utils.mkup_taglist_name(exp_name)
