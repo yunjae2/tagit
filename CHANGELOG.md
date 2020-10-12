@@ -1,8 +1,15 @@
 # CHANGELOG
 
+
+## v0.0.10
+- Update internal architecture (not backward-compatible)
+- Improve parsing performance when changed/total ratio is low
+
+
 ## v0.0.9
 - Fix bug that parse-remove command not working in some envs
 - Update README
+
 
 ## v0.0.8
 - Prohibit multiple records with same tags
