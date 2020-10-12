@@ -10,6 +10,8 @@ import sys
 '''
 experiment table
 
+Table name: _tagit_exp_{name}
+
 Desc: The main table for an experiment that holds the data
 
 Layout:

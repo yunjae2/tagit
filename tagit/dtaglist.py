@@ -7,6 +7,8 @@ import sys
 '''
 dtaglist table
 
+Table name: _tagit_dtaglist_{name}
+
 Desc: Maintains metadata for dtags (data categories)
 
 Layout:

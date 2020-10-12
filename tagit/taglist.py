@@ -7,6 +7,8 @@ import sys
 '''
 taglist table
 
+Table name: _tagit_taglist_{name}
+
 Desc: Maintains metadata for tags
 
 Layout:

@@ -8,6 +8,8 @@ import sys
 '''
 parser table
 
+Table name: _tagit_parser_{name}
+
 Desc: Maintains metadata for parsing rules
 
 Layout:
