@@ -134,6 +134,7 @@ def build_parsing_graph(exp_name: str):
     if not _exists(pid):
         return {}
 
+    updated_global = False
     graph = {}
     rules = query.get_entities(pid, {}, [])
     for rule in rules:
@@ -148,7 +149,9 @@ def build_parsing_graph(exp_name: str):
         else:
             graph[dest] = [edge]
 
-    return graph
+        updated_global |= updated == "True"
+
+    return graph, updated_global
 
 
 def parse_data(exp_name, src, dest, cmd, params, data):

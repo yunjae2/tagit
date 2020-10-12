@@ -5,6 +5,7 @@ import os
 tagit_prefix = "_tagit_"
 
 dtag_prefix = tagit_prefix + "data_"
+dstat_prefix = tagit_prefix + "stat_"
 default_dtag = dtag_prefix + "raw"
 
 exp_prefix = tagit_prefix + "exp_"

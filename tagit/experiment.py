@@ -16,14 +16,19 @@ Desc: The main table for an experiment that holds the data
 
 Layout:
 
-  storage  |  mem  |      _tagit_data_raw      | _tagit_data_iops | _tagit_data_latency
------------+-------+---------------------------+---------------------------------------
- sata_ssd  | 16GB  | IOPS: 20K\nlatency: 100us | 20K              | 100us
- nvme_ssd  | 16GB  | IOPS: 40K\nlatency: 10us  | 40K              | 10us
- nvme_ssd  | 32GB  | IOPS: 60K\nlatency: 10us  | 60K              | 10us
+  storage  |  mem  |      _tagit_data_raw      | _tagit_stat_raw | _tagit_data_iops | _tagit_stat_iops | ...
+-----------+-------+---------------------------+-----------------+------------------+------------------+----
+ sata_ssd  | 16GB  | IOPS: 20K\nlatency: 100us | False           | 20K              | False            | ...
+ nvme_ssd  | 16GB  | IOPS: 40K\nlatency: 10us  | False           | 40K              | False            | ...
+ nvme_ssd  | 32GB  | IOPS: 60K\nlatency: 10us  | True            | 60K              | False            | ...
 
 Components:
-- column: A tag or dtag; columns starting with '_tagit_data_' is dtag columns.
+- column
+    - tag: columns not starting with '_tagit_data'; contains tag value
+    - dtag: columns starting with '_tagit_data_'; contains the data for
+      the dtag
+    - dstat: columns starting with '_tagit_stat_'; describes if
+      a data has been updated since the last parsing.
 - row: Each recorded data as well as parsed results (in dtag columns)
 
 '''
@@ -69,6 +74,7 @@ def get():
 
 def _create(eid):
     query.create_table(eid, [default_dtag])
+    query.new_column(eid, utils.dtag2dstat(default_dtag))
 
 
 def create(exp_name):
@@ -149,6 +155,49 @@ def get_data(exp_name, params, dtags):
     return data
 
 
+def get_dstat(exp_name, params, dstats):
+    # data: [{tag1: val1, tag2: val2, ..., dstat1: status, ...}, {...}, ...]
+    eid = exp_id(exp_name)
+
+    tags = taglist.get_tags(exp_name)
+    if dstats[0] == "*":
+        dtags = dtaglist.get_dtags(exp_name)
+        dstats = [utils.dtag2dstat(x) for x in dtags]
+    conds = params
+    cols = tags + dstats
+    entities = query.get_entities(eid, conds, cols)
+
+    data = []
+    for entity in entities:
+        # Order by params
+        # TODO: handle error for wrong params
+        ordered = OrderedDict()
+        for key in params:
+            ordered[key] = entity.pop(key)
+        ordered.update(entity)
+        for dstat in dstats:
+            ordered.move_to_end(dstat)
+
+        data.append(ordered)
+
+    for dat in data:
+        for key in dat:
+            if dat[key] == None:
+                dat[key] = ""
+
+    return data
+
+
+# Update dstat to "True"
+def update_dstat(exp_name, params, dtags):
+    eid = exp_id(exp_name)
+
+    conds = params
+    dstats = [utils.dtag2dstat(x) for x in dtags]
+    vals = OrderedDict((x, "True") for x in dstats)
+    query.update_row(eid, conds, vals)
+
+
 def add_data(exp_name, params, dtags, data):
     eid = exp_id(exp_name)
 
@@ -166,7 +215,7 @@ def add_data(exp_name, params, dtags, data):
     query.add_entity(eid, entity)
 
     # Mark updated data categories for lazy parsing
-    dtaglist.mark_dtags_updated(exp_name, dtags)
+    update_dstat(exp_name, params, dtags)
 
 
 def _append_data(eid, params, dtag, data):
@@ -222,26 +271,30 @@ def update_dtags(exp_name, dtags, derived=False):
     eid = exp_id(exp_name)
 
     curr_cols = query.get_columns(eid)
-    new_dtags = []
+    new_cols = []
 
     for dtag in dtags:
+        dstat = utils.mkup_dstat(utils.dtag_name(dtag))
         if dtag not in curr_cols:
-            new_dtags.append(dtag)
+            new_cols.append(dtag)
+            new_cols.append(dstat)
 
-    query.new_columns(eid, new_dtags)
+    query.new_columns(eid, new_cols)
 
     dtaglist.update(exp_name, dtags, derived)
 
-    if new_dtags:
+    if new_cols:
         print(f"[{exp_name}] New data category: ")
+        new_dtags = (x for x in new_cols if utils.is_dtag(x))
         for dtag in new_dtags:
             dtag_name = utils.dtag_name(dtag)
             print(f"- {dtag_name}")
 
 
-def clear_dtag(exp_name, dtag):
+# Clear the dtag of the row
+def clear_dtag(exp_name, dtag, params):
     eid = exp_id(exp_name)
-    query.update_row(eid, {}, {dtag: ""})
+    query.update_row(eid, params, {dtag: ""})
 
 
 def validate(exp_name):
@@ -261,19 +314,23 @@ def do_list():
         print(exp)
 
 
-def _run_parsing_rule(exp_name, src, dest, cmd):
+def _run_parsing_rule(exp_name, src, dest, cmd, params):
     eid = exp_id(exp_name)
 
-    records = query.get_entities(eid, {}, [])
-    for record in records:
-        data = record[src]
-        params = OrderedDict((k, [v]) for (k, v) in record.items() \
-                if not utils.is_prohibited_name(k))
-        parsed = parser.parse_data(exp_name, src, dest, cmd, params, data)
-        _append_data(eid, params, dest, parsed)
+    records = get_data(exp_name, params, [src])
+    if len(records) != 1:
+        if len(records) == 0:
+            print("Internal error: target record is missing")
+        if len(records) > 1:
+            print("Internal error: wrong params or redundant records")
+        sys.exit(-1)
+
+    data = records[0][src]
+    parsed = parser.parse_data(exp_name, src, dest, cmd, params, data)
+    _append_data(eid, params, dest, parsed)
 
 
-def _run_backward_each_node(exp_name, graph, dtags, node):
+def _run_backward_each_node(exp_name, graph, params, dtags, node):
     # root sources
     if node not in graph:
         dtags[node]["up-to-date"] = True
@@ -285,24 +342,24 @@ def _run_backward_each_node(exp_name, graph, dtags, node):
         src = edge["src"]
         rule_updated = (edge["updated"] == "True")
         need_update |= rule_updated
-        need_update |= _run_backward_each_node(exp_name, graph, dtags, src)
+        need_update |= _run_backward_each_node(exp_name, graph, params, dtags, src)
 
     if need_update:
-        clear_dtag(exp_name, node)
+        clear_dtag(exp_name, node, params)
         for edge in edges:
             src = edge["src"]
             cmd = edge["cmd"]
-            _run_parsing_rule(exp_name, src, node, cmd)
+            _run_parsing_rule(exp_name, src, node, cmd, params)
 
     dtags[node]["up-to-date"] = True
     return need_update
 
 
-def _run_backward_each_leaf(exp_name, graph, dtags, leaf):
-    _run_backward_each_node(exp_name, graph, dtags, leaf)
+def _run_backward_each_leaf(exp_name, graph, params, dtags, leaf):
+    _run_backward_each_node(exp_name, graph, params, dtags, leaf)
 
 
-def run_parsing_graph_backward(exp_name, graph, dtags):
+def run_parsing_graph_backward(exp_name, graph, params, dtags):
     if not graph or not dtags:
         return
 
@@ -314,16 +371,45 @@ def run_parsing_graph_backward(exp_name, graph, dtags):
                 leaves.remove(src)
 
     for leaf in leaves:
-        _run_backward_each_leaf(exp_name, graph, dtags, leaf)
+        _run_backward_each_leaf(exp_name, graph, params, dtags, leaf)
 
 
 def run_parser(exp_name):
-    parsing_graph = parser.build_parsing_graph(exp_name)
-    dtag_status = dtaglist.get_status(exp_name)
-    run_parsing_graph_backward(exp_name, parsing_graph, dtag_status)
+    parsing_graph, updated = parser.build_parsing_graph(exp_name)
+    rows = get_dstat(exp_name, {}, ["*"])
+    target_rows = []
+
+    for row in rows:
+        need_run = updated
+        params = OrderedDict((k, [v]) for k, v in row.items() if not utils.is_dstat(k))
+        dtag_status = OrderedDict((utils.dstat2dtag(k), {"updated": v == "True", \
+                "up-to-date": False}) for k, v in row.items() if utils.is_dstat(k))
+
+        if not need_run:
+            for dtag, status in dtag_status.items():
+                if status["updated"] == "True":
+                    need_run = True
+
+        if need_run:
+            target_rows.append((params, dtag_status))
+
+    for params, dtag_status in target_rows:
+        run_parsing_graph_backward(exp_name, parsing_graph, params, dtag_status)
+
     # Reset 'updated' of each dtag to False
-    dtaglist.reset_status(exp_name)
+    reset_dstat(exp_name)
     parser.reset_status(exp_name)
+
+
+# Reset all dstats of all records
+def reset_dstat(exp_name):
+    eid = exp_id(exp_name)
+
+    dtags = dtaglist.get_dtags(exp_name)
+    dstats = [utils.dtag2dstat(x) for x in dtags]
+
+    vals = OrderedDict((x, "False") for x in dstats)
+    query.update_row(eid, {}, vals)
 
 
 def rename_tag(exp_name, old, new):

@@ -113,3 +113,37 @@ def mkup_command(comm_args: []) -> str:
     for arg in comm_args:
         comm_str = comm_str + " " + arg
     return comm_str
+
+
+def mkup_dstat(name: str) -> str:
+    # Convert name: str() -> dstat: str()
+    # Make up the internal name of the data status
+    if name.startswith(tagit_prefix):
+        print("Internal error: wrong dtag name")
+        sys.exit(-1)
+
+    return dstat_prefix + name
+
+
+def is_dstat(col: str) -> bool:
+    if col.startswith(dstat_prefix):
+        return True
+    return False
+
+
+def dstat_name(dstat: str) -> str:
+    if not is_dstat(dstat):
+        print("Internal error: wrong dstat format")
+        sys.exit(-1)
+
+    return dstat[len(dstat_prefix):]
+
+
+def dstat2dtag(dstat: str) -> str:
+    name = dstat_name(dstat)
+    return mkup_dtag(name)
+
+
+def dtag2dstat(dtag: str) -> str:
+    name = dtag_name(dtag)
+    return mkup_dstat(name)
