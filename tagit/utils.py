@@ -102,36 +102,10 @@ def is_dtag(col: str) -> bool:
     return False
 
 
-def is_parser_name(table: str) -> bool:
-    if table.startswith(parser_prefix):
-        return True
-    return False
-
-
-def mkup_parser_name(exp_name: str) -> str:
-    if is_prohibited_name(exp_name):
-        print("Interal error: wrong exp_name format")
-        sys.exit(-1)
-
-    return parser_prefix + exp_name
-
-
 def is_prohibited_name(name: str) -> bool:
     if name.startswith(tagit_prefix):
         return True
     return False
-
-
-def mkup_dtag_list_name(exp_name: str) -> str:
-    if is_prohibited_name(exp_name):
-        print("Interal error: wrong exp_name format")
-        sys.exit(-1)
-
-    return dtaglist_prefix + exp_name
-
-
-def is_exp_name(table: str) -> bool:
-    return table.startswith(exp_prefix)
 
 
 def mkup_command(comm_args: []) -> str:
@@ -139,11 +113,3 @@ def mkup_command(comm_args: []) -> str:
     for arg in comm_args:
         comm_str = comm_str + " " + arg
     return comm_str
-
-
-def mkup_taglist_name(exp_name: str) -> str:
-    if is_prohibited_name(exp_name):
-        print("Interal error: wrong exp_name format")
-        sys.exit(-1)
-
-    return taglist_prefix + exp_name

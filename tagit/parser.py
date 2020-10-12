@@ -28,32 +28,48 @@ Columns:
 
 '''
 
-def _exists(name):
-    if query.table_exists(name):
+
+def parser_id(exp_name: str) -> str:
+    if utils.is_prohibited_name(exp_name):
+        print("Interal error: wrong exp_name format")
+        sys.exit(-1)
+
+    return parser_prefix + exp_name
+
+
+def is_parser_id(table: str) -> bool:
+    if table.startswith(parser_prefix):
+        return True
+
+    return False
+
+
+def _exists(pid):
+    if query.table_exists(pid):
         return True
 
     return False
 
 
 def exists(exp_name):
-    name = utils.mkup_parser_name(exp_name)
-    return _exists(name)
+    pid = parser_id(exp_name)
+    return _exists(pid)
 
 
-def _create(name):
-    query.create_table(name, ["rule", "src_dtag", "dest_dtag", "updated"])
+def _create(pid):
+    query.create_table(pid, ["rule", "src_dtag", "dest_dtag", "updated"])
 
 
 def create(exp_name):
-    name = utils.mkup_parser_name(exp_name)
-    _create(name)
+    pid = parser_id(exp_name)
+    _create(pid)
 
 
 def get(exp_name):
-    name = utils.mkup_parser_name(exp_name)
+    pid = parser_id(exp_name)
 
-    if _exists(name):
-        data = query.get_entities(name, {}, [])
+    if _exists(pid):
+        data = query.get_entities(pid, {}, [])
     else:
         data = []
 
@@ -61,11 +77,11 @@ def get(exp_name):
 
 
 def add(exp_name, rule, dtag_src, dtag_dest):
-    name = utils.mkup_parser_name(exp_name)
+    pid = parser_id(exp_name)
 
     # Create parser for the experiment if it has not been created yet
-    if not _exists(name):
-        _create(name)
+    if not _exists(pid):
+        _create(pid)
 
     params = OrderedDict([
         ("rule", rule),
@@ -73,28 +89,28 @@ def add(exp_name, rule, dtag_src, dtag_dest):
         ("dest_dtag", dtag_dest),
         ("updated", "True")
         ])
-    query.add_entity(name, params)
+    query.add_entity(pid, params)
 
 
-def _delete(name):
-    _validate(name)
-    query.drop_table(name)
+def _delete(pid):
+    _validate(pid)
+    query.drop_table(pid)
 
 
 def delete(exp_name):
-    name = utils.mkup_parser_name(exp_name)
-    _delete(name)
+    pid = parser_id(exp_name)
+    _delete(pid)
 
 
 def rename(old_exp_name, new_exp_name):
-    old_name = utils.mkup_parser_name(old_exp_name)
-    new_name = utils.mkup_parser_name(new_exp_name)
+    old_pid = parser_id(old_exp_name)
+    new_pid = parser_id(new_exp_name)
 
-    query.rename_table(old_name, new_name)
+    query.rename_table(old_pid, new_pid)
 
 
-def _validate(name):
-    if not _exists(name):
+def _validate(pid):
+    if not _exists(pid):
         print("Internal error: no such parser")
         sys.exit(-1)
 
@@ -106,20 +122,20 @@ def validate(exp_name):
 
 
 def reset_status(exp_name: str):
-    name = utils.mkup_parser_name(exp_name)
-    if not _exists(name):
+    pid = parser_id(exp_name)
+    if not _exists(pid):
         return
 
-    query.update_row(name, {}, {"updated": "False"})
+    query.update_row(pid, {}, {"updated": "False"})
 
 
 def build_parsing_graph(exp_name: str):
-    name = utils.mkup_parser_name(exp_name)
-    if not _exists(name):
+    pid = parser_id(exp_name)
+    if not _exists(pid):
         return {}
 
     graph = {}
-    rules = query.get_entities(name, {}, [])
+    rules = query.get_entities(pid, {}, [])
     for rule in rules:
         src = rule['src_dtag']
         dest = rule['dest_dtag']
@@ -164,10 +180,10 @@ def remove_rule(exp_name, rule_id):
         print("Error: no parsing rule id is provided")
         sys.exit(-1)
 
-    name = utils.mkup_parser_name(exp_name)
-    query.delete_rows(name, OrderedDict([]), offset=rule_id, limit=1)
+    pid = parser_id(exp_name)
+    query.delete_rows(pid, OrderedDict([]), offset=rule_id, limit=1)
 
 
 def remove_all_rules(exp_name):
-    name = utils.mkup_parser_name(exp_name)
-    query.delete_rows(name, OrderedDict([]))
+    pid = parser_id(exp_name)
+    query.delete_rows(pid, OrderedDict([]))

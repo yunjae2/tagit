@@ -29,15 +29,15 @@ Components:
 '''
 
 
-def external_name(name):
-    if not name.startswith(exp_prefix):
+def exp_name(exp_id):
+    if not exp_id.startswith(exp_prefix):
         print("Interal error: wrong exp_name format")
         sys.exit(-1)
 
-    return name[len(exp_prefix):]
+    return exp_id[len(exp_prefix):]
 
 
-def internal_name(exp_name):
+def exp_id(exp_name):
     if utils.is_prohibited_name(exp_name):
         print("Interal error: wrong exp_name format")
         sys.exit(-1)
@@ -45,9 +45,16 @@ def internal_name(exp_name):
     return exp_prefix + exp_name
 
 
+def is_exp_id(exp_str):
+    if exp_str.startswith(exp_prefix):
+        return True
+
+    return False
+
+
 def exists(exp_name):
-    name = internal_name(exp_name)
-    if query.table_exists(name):
+    eid = exp_id(exp_name)
+    if query.table_exists(eid):
         return True
 
     return False
@@ -55,36 +62,37 @@ def exists(exp_name):
 
 def get():
     tables = query.get_tables()
-    exps = [external_name(x) for x in tables if utils.is_exp_name(x)]
+    exps = [exp_name(x) for x in tables if is_exp_id(x)]
 
     return exps
 
 
-def _create(exp_name):
-    name = internal_name(exp_name)
-    query.create_table(name, [default_dtag])
+def _create(eid):
+    query.create_table(eid, [default_dtag])
 
 
-def create(name):
-    _create(name)
-    taglist.create(name)
-    dtaglist.create(name)
-    parser.create(name)
+def create(exp_name):
+    eid = exp_id(exp_name)
+    _create(eid)
 
-    print(f"New experiment: [{name}]")
+    taglist.create(exp_name)
+    dtaglist.create(exp_name)
+    parser.create(exp_name)
+
+    print(f"New experiment: [{exp_name}]")
 
 
 def delete(exp_name: str):
-    name = internal_name(exp_name)
+    eid = exp_id(exp_name)
     validate(exp_name)
 
-    query.drop_table(name)
+    query.drop_table(eid)
 
     taglist.delete(exp_name)
     dtaglist.delete(exp_name)
     parser.delete(exp_name)
 
-    print(f"Experiment deleted: {name}")
+    print(f"Experiment deleted: {exp_name}")
 
 
 def _rename(old, new):
@@ -100,10 +108,10 @@ def rename(exp_old, exp_new):
         print(f"Error: {exp_new} already exists")
         sys.exit(-1)
 
-    old = internal_name(exp_old)
-    new = internal_name(exp_new)
+    old_eid = exp_id(exp_old)
+    new_eid = exp_id(exp_new)
 
-    _rename(old, new)
+    _rename(old_eid, new_eid)
     dtaglist.rename(exp_old, exp_new)
     parser.rename(exp_old, exp_new)
     taglist.rename(exp_old, exp_new)
@@ -111,14 +119,14 @@ def rename(exp_old, exp_new):
 
 def get_data(exp_name, params, dtags):
     # data: [{tag1: val1, tag2: val2, ..., dtag1: data1, ...}, {...}, ...]
-    name = internal_name(exp_name)
+    eid = exp_id(exp_name)
 
     tags = taglist.get_tags(exp_name)
     if dtags[0] == "*":
         dtags = dtaglist.get_dtags(exp_name)
     conds = params
     cols = tags + dtags
-    entities = query.get_entities(name, conds, cols)
+    entities = query.get_entities(eid, conds, cols)
 
     data = []
     for entity in entities:
@@ -142,12 +150,12 @@ def get_data(exp_name, params, dtags):
 
 
 def add_data(exp_name, params, dtags, data):
-    name = internal_name(exp_name)
+    eid = exp_id(exp_name)
 
-    existing = query.get_entities(name, params, [])
+    existing = query.get_entities(eid, params, [])
     if len(existing) != 0:
         print("Warning: data overwritten")
-        query.delete_rows(name, params)
+        query.delete_rows(eid, params)
 
     entity = OrderedDict()
     for key, mvalue in params.items():
@@ -155,26 +163,26 @@ def add_data(exp_name, params, dtags, data):
     for dtag in dtags:
         entity[dtag] = data
 
-    query.add_entity(name, entity)
+    query.add_entity(eid, entity)
 
     # Mark updated data categories for lazy parsing
     dtaglist.mark_dtags_updated(exp_name, dtags)
 
 
-def _append_data(name, params, dtag, data):
-    query.append_row(name, params, {dtag: data})
+def _append_data(eid, params, dtag, data):
+    query.append_row(eid, params, {dtag: data})
 
 
 def delete_data(exp_name: str, params: OrderedDict()):
-    name = internal_name(exp_name)
-    query.delete_rows(name, params)
+    eid = exp_id(exp_name)
+    query.delete_rows(eid, params)
 
 
 def update_tags(exp_name, params):
-    name = internal_name(exp_name)
+    eid = exp_id(exp_name)
 
     vars_ = list(params.keys())
-    curr_vars = query.get_columns(name)
+    curr_vars = query.get_columns(eid)
     new_params = {}
 
     for k, v in params.items():
@@ -184,7 +192,7 @@ def update_tags(exp_name, params):
     if new_params:
         # TODO: Show warning if a data exists before a new variable is added
         taglist.add_tags(exp_name, new_params)
-        query.new_columns(name, new_params.keys())
+        query.new_columns(eid, new_params.keys())
 
         print(f"[{exp_name}] New tag added:")
         for key in new_params:
@@ -192,14 +200,14 @@ def update_tags(exp_name, params):
 
 
 def update_tag_values(exp_name: str, params: OrderedDict(), uparams: OrderedDict()):
-    name = internal_name(exp_name)
+    eid = exp_id(exp_name)
 
     # Update if new variable added
     update_tags(exp_name, uparams)
 
     # Abort if the record with the same tags already exists
     params_after = utils.param_after_update(params, uparams)
-    existing = query.get_entities(name, params_after, [])
+    existing = query.get_entities(eid, params_after, [])
     if len(existing) != 0:
         print("Error: conflict with existing record")
         sys.exit(-1)
@@ -207,20 +215,20 @@ def update_tag_values(exp_name: str, params: OrderedDict(), uparams: OrderedDict
     uparams_ = OrderedDict((k, [v]) for (k, v) in uparams.items())
 
     # Update tags
-    query.update_row(name, params, uparams)
+    query.update_row(eid, params, uparams)
 
 
 def update_dtags(exp_name, dtags, derived=False):
-    name = internal_name(exp_name)
+    eid = exp_id(exp_name)
 
-    curr_cols = query.get_columns(name)
+    curr_cols = query.get_columns(eid)
     new_dtags = []
 
     for dtag in dtags:
         if dtag not in curr_cols:
             new_dtags.append(dtag)
 
-    query.new_columns(name, new_dtags)
+    query.new_columns(eid, new_dtags)
 
     dtaglist.update(exp_name, dtags, derived)
 
@@ -232,8 +240,8 @@ def update_dtags(exp_name, dtags, derived=False):
 
 
 def clear_dtag(exp_name, dtag):
-    name = internal_name(exp_name)
-    query.update_row(name, {}, {dtag: ""})
+    eid = exp_id(exp_name)
+    query.update_row(eid, {}, {dtag: ""})
 
 
 def validate(exp_name):
@@ -254,15 +262,15 @@ def do_list():
 
 
 def _run_parsing_rule(exp_name, src, dest, cmd):
-    name = internal_name(exp_name)
+    eid = exp_id(exp_name)
 
-    records = query.get_entities(name, {}, [])
+    records = query.get_entities(eid, {}, [])
     for record in records:
         data = record[src]
         params = OrderedDict((k, [v]) for (k, v) in record.items() \
                 if not utils.is_prohibited_name(k))
         parsed = parser.parse_data(exp_name, src, dest, cmd, params, data)
-        _append_data(name, params, dest, parsed)
+        _append_data(eid, params, dest, parsed)
 
 
 def _run_backward_each_node(exp_name, graph, dtags, node):
@@ -319,7 +327,7 @@ def run_parser(exp_name):
 
 
 def rename_tag(exp_name, old, new):
-    name = internal_name(exp_name)
+    eid = exp_id(exp_name)
 
     # check the tag existence
     if not taglist.tag_exists(exp_name, old):
@@ -334,7 +342,7 @@ def rename_tag(exp_name, old, new):
         print(f"Error: {new} already exists")
         sys.exit(-1)
 
-    curr_tags = [x for x in query.get_columns(name) if not utils.is_dtag(x)]
+    curr_tags = [x for x in query.get_columns(eid) if not utils.is_dtag(x)]
     if old not in curr_tags or new in curr_tags:
         print("Internal error: experiment-taglist incoherent")
         sys.exit(-1)
@@ -343,4 +351,4 @@ def rename_tag(exp_name, old, new):
     taglist.rename_tag(exp_name, old, new)
 
     # Update experiment table
-    query.rename_column(name, old, new)
+    query.rename_column(eid, old, new)

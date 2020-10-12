@@ -29,40 +29,48 @@ Columns:
 '''
 
 
+def dtaglist_id(exp_name: str) -> str:
+    if utils.is_prohibited_name(exp_name):
+        print("Interal error: wrong exp_name format")
+        sys.exit(-1)
+
+    return dtaglist_prefix + exp_name
+
+
 def exists(exp_name):
-    name = utils.mkup_dtag_list_name(exp_name)
-    if query.table_exists(name):
+    did = dtaglist_id(exp_name)
+    if query.table_exists(did):
         return True
 
     return False
 
 
 def create(exp_name):
-    name = utils.mkup_dtag_list_name(exp_name)
-    query.create_table(name, ["name", "derived", "updated"])
+    did = dtaglist_id(exp_name)
+    query.create_table(did, ["name", "derived", "updated"])
 
     update(exp_name, [default_dtag], False)
 
 
 def delete(exp_name):
     validate(exp_name)
-    name = utils.mkup_dtag_list_name(exp_name)
-    query.drop_table(name)
+    did = dtaglist_id(exp_name)
+    query.drop_table(did)
 
 
 def rename(old_exp_name, new_exp_name):
-    old_name = utils.mkup_dtag_list_name(old_exp_name)
-    new_name = utils.mkup_dtag_list_name(new_exp_name)
+    old_did = dtaglist_id(old_exp_name)
+    new_did = dtaglist_id(new_exp_name)
 
-    query.rename_table(old_name, new_name)
+    query.rename_table(old_did, new_did)
 
 
 def update(exp_name, dtags, derived):
-    name = utils.mkup_dtag_list_name(exp_name)
+    did = dtaglist_id(exp_name)
 
     validate(exp_name)
 
-    curr_dtag_list = query.get_entities(name, {}, ["name", "derived"])
+    curr_dtag_list = query.get_entities(did, {}, ["name", "derived"])
     curr_dtags = [x["name"] for x in curr_dtag_list]
     new_dtags = []
 
@@ -75,7 +83,7 @@ def update(exp_name, dtags, derived):
                 })
 
     _validate_derived(curr_dtag_list, dtags, derived)
-    query.add_entities(name, new_dtags)
+    query.add_entities(did, new_dtags)
 
 
 def validate(exp_name):
@@ -101,20 +109,20 @@ def _validate_derived(curr_dtags, dtags, derived):
 
 
 def validate_derived(exp_name, dtags, derived):
-    name = utils.mkup_dtag_list_name(exp_name)
+    did = dtaglist_id(exp_name)
 
     validate(exp_name)
 
-    curr_dtags = query.get_entities(name, {}, ["name", "derived"])
+    curr_dtags = query.get_entities(did, {}, ["name", "derived"])
     _validate_derived(curr_dtags, dtags, derived)
 
 
 def get_status(exp_name: str):
-    name = utils.mkup_dtag_list_name(exp_name)
+    did = dtaglist_id(exp_name)
     if not exists(exp_name):
         return []
 
-    curr_dtag_list = query.get_entities(name, {}, ["name", "updated"])
+    curr_dtag_list = query.get_entities(did, {}, ["name", "updated"])
     dtag_status = OrderedDict((x["name"], {"updated": x["updated"] == "True", \
             "up-to-date": False}) for x in curr_dtag_list)
 
@@ -122,22 +130,22 @@ def get_status(exp_name: str):
 
 
 def reset_status(exp_name: str):
-    dtag_list_name = utils.mkup_dtag_list_name(exp_name)
     if not exists(exp_name):
         return
 
-    query.update_row(dtag_list_name, {}, {"updated": "False"})
+    did = dtaglist_id(exp_name)
+    query.update_row(did, {}, {"updated": "False"})
 
 
 def mark_dtags_updated(exp_name, dtags):
-    name = utils.mkup_dtag_list_name(exp_name)
+    did = dtaglist_id(exp_name)
     cond_vals = [({"name": [x]}, {"updated": "True"}) for x in dtags]
-    query.update_rows(name, cond_vals)
+    query.update_rows(did, cond_vals)
 
 
 def get_dtags(exp_name, internal=True):
-    name = utils.mkup_dtag_list_name(exp_name)
-    dtaglist = query.get_entities(name, {}, ["name"])
+    did = dtaglist_id(exp_name)
+    dtaglist = query.get_entities(did, {}, ["name"])
 
     if internal:
         dtags = [x["name"] for x in dtaglist]
