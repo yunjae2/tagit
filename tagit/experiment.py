@@ -198,6 +198,16 @@ def update_dstat(exp_name, params, dtags):
     query.update_row(eid, conds, vals)
 
 
+# Reset dstat to "False"
+def reset_dstat(exp_name, params, dtags):
+    eid = exp_id(exp_name)
+
+    conds = params
+    dstats = [utils.dtag2dstat(x) for x in dtags]
+    vals = OrderedDict((x, "False") for x in dstats)
+    query.update_row(eid, conds, vals)
+
+
 def add_data(exp_name, params, dtags, data):
     eid = exp_id(exp_name)
 
@@ -329,6 +339,8 @@ def _run_parsing_rule(exp_name, src, dest, cmd, params):
     parsed = parser.parse_data(exp_name, src, dest, cmd, params, data)
     _append_data(eid, params, dest, parsed)
 
+    reset_dstat(exp_name, params, [src])
+
 
 def _run_backward_each_node(exp_name, graph, params, dtags, node):
     # root sources
@@ -387,7 +399,7 @@ def run_parser(exp_name):
 
         if not need_run:
             for dtag, status in dtag_status.items():
-                if status["updated"] == "True":
+                if status["updated"] == True:
                     need_run = True
 
         if need_run:
@@ -396,20 +408,7 @@ def run_parser(exp_name):
     for params, dtag_status in target_rows:
         run_parsing_graph_backward(exp_name, parsing_graph, params, dtag_status)
 
-    # Reset 'updated' of each dtag to False
-    reset_dstat(exp_name)
     parser.reset_status(exp_name)
-
-
-# Reset all dstats of all records
-def reset_dstat(exp_name):
-    eid = exp_id(exp_name)
-
-    dtags = dtaglist.get_dtags(exp_name)
-    dstats = [utils.dtag2dstat(x) for x in dtags]
-
-    vals = OrderedDict((x, "False") for x in dstats)
-    query.update_row(eid, {}, vals)
 
 
 def rename_tag(exp_name, old, new):
