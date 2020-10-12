@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## v0.0.11
+- Fix the bug that updated data is not being parsed
+
 
 ## v0.0.10
 - Update internal architecture (not backward-compatible)
