@@ -127,11 +127,11 @@ def mkup_dtag_list_name(exp_name: str) -> str:
         print("Interal error: wrong exp_name format")
         sys.exit(-1)
 
-    return dtag_list_prefix + exp_name
+    return dtaglist_prefix + exp_name
 
 
 def is_exp_name(table: str) -> bool:
-    return not is_prohibited_name(table)
+    return table.startswith(exp_prefix)
 
 
 def mkup_command(comm_args: []) -> str:

@@ -525,23 +525,6 @@ def tag_unfixer(args):
     taglist.unset_default(exp_name, params)
 
 
-def rename_tag(exp_name, old, new):
-    # check the tag existence
-    if not taglist.tag_exists(exp_name, old):
-        print("Error: no such tag")
-        print(f"List of tags in {exp_name}:")
-        for tag in tags:
-            print(f"- {tag}")
-        sys.exit(-1)
-
-    # Abort if the new tag name already occupied
-    if taglist.tag_exists(exp_name, new):
-        print(f"Error: {new} already exists")
-        sys.exit(-1)
-
-    taglist.rename_tag(exp_name, old, new)
-
-
 def exp_renamer(args):
     old_name = args.name
     new_name = args.new_name
@@ -556,7 +539,7 @@ def tag_renamer(args):
 
     experiment.validate(exp_name)
 
-    rename_tag(exp_name, old_name, new_name)
+    experiment.rename_tag(exp_name, old_name, new_name)
 
 
 def tag_updater(args):

@@ -7,9 +7,10 @@ tagit_prefix = "_tagit_"
 dtag_prefix = tagit_prefix + "data_"
 default_dtag = dtag_prefix + "raw"
 
-parser_prefix = tagit_prefix + "parser_"
-dtag_list_prefix = tagit_prefix + "dtag_list_"
+exp_prefix = tagit_prefix + "exp_"
 taglist_prefix = tagit_prefix + "taglist_"
+dtaglist_prefix = tagit_prefix + "dtaglist_"
+parser_prefix = tagit_prefix + "parser_"
 
 TAGIT_EMPTY = tagit_prefix + "empty_"
 

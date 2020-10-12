@@ -138,8 +138,6 @@ def rename_tag(exp_name, old, new):
 
     # Update taglist
     query.update_row(name, {'name': [old]}, {'name': new})
-    # Update table
-    query.rename_column(exp_name, old, new)
 
 
 def validate(exp_name):
