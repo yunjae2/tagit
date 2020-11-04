@@ -2,7 +2,6 @@ from .configs import *
 from . import utils
 import sqlite3
 import os
-import sqlitebck
 from collections import OrderedDict
 
 
@@ -248,6 +247,7 @@ def dump_db(filename):
         conn.backup(backup_conn)
     except AttributeError:
         # Python < 3.7
+        import sqlitebck
         sqlitebck.copy(conn, backup_conn)
 
 
