@@ -321,28 +321,6 @@ def reporter(args):
         report_std(exp_name, params, data)
 
 
-def manager(args):
-    # TODO: Implement the body
-    # Features
-    # 1. add a variable
-    # 2. set the default value for a variable
-    # 3. remove rows with params specified
-    # 4. regex pattern replace
-    # 5. remove an experiment
-    # 6. set argument order
-    # 7. rename exp
-    # 8. rename variable
-    exp_name = args.exp_name
-    delete_param_str = args.r
-
-    experiment.validate(exp_name)
-
-    if delete_param_str:
-        params = utils.param_dict(delete_param_str)
-        validate_params(exp_name, params, [])
-        experiment.delete_data(exp_name, params)
-
-
 def list_vars(exp_name):
     def_params = taglist.default_params(exp_name)
 
@@ -534,6 +512,24 @@ def exp_remover(args):
     experiment.delete(exp_name)
 
 
+def exp_cleaner(args):
+    exp_name = args.exp_name
+
+    experiment.validate(exp_name)
+    experiment.delete_data(exp_name, {})
+
+
+def data_remover(args):
+    exp_name = args.exp_name
+    param_str = args.tags
+
+    experiment.validate(exp_name)
+
+    params = utils.param_dict(param_str)
+    validate_params(exp_name, params, [])
+    experiment.delete_data(exp_name, params)
+
+
 def tag_renamer(args):
     exp_name = args.exp_name
     old_name = args.name
@@ -589,14 +585,6 @@ def parse_args():
     rep_parser.set_defaults(worker=reporter)
 
 
-    # Manage command
-    man_parser = subparsers.add_parser('manage', help='manage recorded data and tags')
-    man_parser.add_argument('exp_name', type=str, help='experiment name')
-    man_parser.add_argument('-r', type=str, nargs='?', const=" ",
-            metavar='tags', help='delete data with specified tags')
-    man_parser.set_defaults(worker=manager)
-
-    # TODO: Separate manage command and remove command
     # TODO: Add data category option to delete
 
 
@@ -614,6 +602,21 @@ def parse_args():
     exp_rem_parser.add_argument('name', type=str, help='experiment to remove')
     exp_rem_parser.set_defaults(worker=exp_remover)
 
+    # exp clean command
+    exp_cln_parser = exp_subparsers.add_parser('clean', help='clean all data from an experiment')
+    exp_cln_parser.add_argument('exp_name', type=str, help='experiment name')
+    exp_cln_parser.set_defaults(worker=exp_cleaner)
+
+    # data command
+    data_parser = subparsers.add_parser('data', help='manage data')
+    data_subparsers = data_parser.add_subparsers(title='subcommands')
+
+    # data remove command
+    data_rm_parser = data_subparsers.add_parser('remove', help='remove data from an experiment')
+    data_rm_parser.add_argument('exp_name', type=str, help='experiment name')
+    data_rm_parser.add_argument('tags', type=str, default="",
+            help='"tags" (e.g., "train_set=stack_overflow")')
+    data_rm_parser.set_defaults(worker=data_remover)
 
     # tag command
     tag_parser = subparsers.add_parser('tag', help='manage tags')

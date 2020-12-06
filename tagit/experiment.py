@@ -101,6 +101,13 @@ def delete(exp_name: str):
     print(f"Experiment deleted: {exp_name}")
 
 
+def clean(exp_name: str):
+    eid = exp_id(exp_name)
+    validate(exp_name)
+
+    query.delete_rows(eid, {})
+
+
 def _rename(old, new):
     query.rename_table(old, new)
 

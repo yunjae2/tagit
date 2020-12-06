@@ -100,4 +100,48 @@ fi
 printf "passed\n"
 
 
+# 3. Clean
+printf "Exp clean test.. "
+
+printf "IOPS: 20K\nlatency: 100us" | tagit record perf "storage=sata_ssd, mem=16GB" > /dev/null
+printf "IOPS: 40K\nlatency: 10us" | tagit record perf "storage=nvme_ssd, mem=16GB" > /dev/null
+printf "IOPS: 60K\nlatency: 10us" | tagit record perf "storage=nvme_ssd, mem=32GB" > /dev/null
+tagit parse add perf iops "awk '/^IOPS/{print \$NF}'" > /dev/null
+tagit parse add perf latency "awk '/^latency/{print \$NF}'" > /dev/null
+tagit exp clean perf > /dev/null
+
+report=$(tagit report perf)
+report_gt=$''
+list=$(tagit list perf)
+list_gt=$'[perf] List of tags:
+- storage
+- mem
+[perf] List of data categories:
+- raw
+- iops
+- latency'
+parse=$(tagit parse list perf)
+parse_gt=$'  id  rule                         src    dest     updated
+----  ---------------------------  -----  -------  ---------
+   0  awk \'/^IOPS/{print $NF}\'     raw    iops     False
+   1  awk \'/^latency/{print $NF}\'  raw    latency  False'
+
+if [ "$report_gt" != "$report" ]
+then
+	printf "failed\n"
+	exit 1
+fi
+if [ "$list_gt" != "$list" ]
+then
+	printf "failed\n"
+	exit 1
+fi
+if [ "$parse_gt" != "$parse" ]
+then
+	printf "failed\n"
+	exit 1
+fi
+printf "passed\n"
+
+
 echo "Test passed"
