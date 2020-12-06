@@ -333,15 +333,11 @@ def manager(args):
     # 7. rename exp
     # 8. rename variable
     exp_name = args.exp_name
-    delete = args.d
     delete_param_str = args.r
 
     experiment.validate(exp_name)
 
-    if delete:
-        experiment.delete(exp_name)
-
-    elif delete_param_str:
+    if delete_param_str:
         params = utils.param_dict(delete_param_str)
         validate_params(exp_name, params, [])
         experiment.delete_data(exp_name, params)
@@ -532,6 +528,12 @@ def exp_renamer(args):
     experiment.rename(old_name, new_name)
 
 
+def exp_remover(args):
+    exp_name = args.name
+
+    experiment.delete(exp_name)
+
+
 def tag_renamer(args):
     exp_name = args.exp_name
     old_name = args.name
@@ -590,9 +592,6 @@ def parse_args():
     # Manage command
     man_parser = subparsers.add_parser('manage', help='manage recorded data and tags')
     man_parser.add_argument('exp_name', type=str, help='experiment name')
-    # TODO: Move to exp subcommand
-    man_parser.add_argument('-d', action='store_true',
-            help='delete an experiment')
     man_parser.add_argument('-r', type=str, nargs='?', const=" ",
             metavar='tags', help='delete data with specified tags')
     man_parser.set_defaults(worker=manager)
@@ -610,6 +609,10 @@ def parse_args():
     exp_ren_parser.add_argument('name', type=str, help='current experiment name')
     exp_ren_parser.add_argument('new_name', type=str, help='new experiment name')
     exp_ren_parser.set_defaults(worker=exp_renamer)
+
+    exp_rem_parser = exp_subparsers.add_parser('remove', help='remove an experiment')
+    exp_rem_parser.add_argument('name', type=str, help='experiment to remove')
+    exp_rem_parser.set_defaults(worker=exp_remover)
 
 
     # tag command

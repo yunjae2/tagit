@@ -89,26 +89,4 @@ fi
 printf "passed\n"
 
 
-# 2. Delete all
-printf "Exp removal test.. "
-
-rm ~/.tagit/tagit.db
-
-echo "A red ball" | tagit record figure "color=red, shape=sphere, weight=10kg" > /dev/null
-echo "A yellow box" | tagit record figure "color=yellow, shape=cube, weight=10kg" > /dev/null
-echo "A green ball" | tagit record figure "color=green, shape=sphere, weight=5kg" > /dev/null
-
-tagit manage figure -d > /dev/null
-report=$(tagit report figure)
-report_gt=$'Error: no such experiment
-List of experiments:'
-
-if [ "$report_gt" != "$report" ]
-then
-	printf "failed\n"
-	exit 1
-fi
-printf "passed\n"
-
-
 echo "Test passed"
