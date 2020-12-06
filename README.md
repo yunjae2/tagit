@@ -207,17 +207,6 @@ Remove parsing rule of id `<rule_id>:` from the experiment `<exp_name>`.
 If `-a` is specified, all parsing rules are removed.
 
 
-#### 4. `manage`
-```
-$ tagit manage <exp_name> [-d] [-r [<tags>]]
-```
-Manages recorded data in <exp_name> space.
-
-* Manange options
-  - `-d`: Delete an experiment.
-  - `-r`: Delete data corresponding to the specified tags in an experiment.
-  This does not delete an experiment, even though every data is deleted.
-
 
 ### Other commands
 #### 1. `list`
@@ -234,15 +223,35 @@ $ tagit exp rename <exp_name> <new_name>
 ```
 Rename the experiment `<exp_name>` to `<new_name>`.
 
+##### 2.2. `exp remove`
+```
+$ tagit exp remove <exp_name>
+```
+Remove the experiment `<exp_name>` and its parser.
 
-#### 3. `tag`
-##### 3.1. `tag rename`
+##### 2.3. `exp clean`
+```
+$ tagit exp clean <exp_name>
+```
+Clean all data from the experiment `<exp_name>`.
+
+
+#### 3. `data`
+##### 3.1. `data remove`
+```
+$ tagit data remove <exp_name> <tags>
+```
+Remove data from the experiment `<exp_name>` by tags.
+
+
+#### 4. `tag`
+##### 4.1. `tag rename`
 ```
 $ tagit tag rename <exp_name> <name> <new_name>
 ```
 In the experiment `<exp_name>`, rename the tag `<name>` to `<new_name>`.
 
-##### 3.2. `tag fix`
+##### 4.2. `tag fix`
 ```
 $ tagit tag fix <exp_name> <tags>
 ```
@@ -251,14 +260,14 @@ For example, `"color=blue, shape=cube"` fixes the tags `color` and `shape` to `b
 When the value of the tag fixed by this command is not specified, the value is set to the fixed value.
 The fixed values can be overrided by values specified during recording.
 
-##### 3.3. `tag unfix`
+##### 4.3. `tag unfix`
 ```
 $ tagit tag unfix <exp_name> <tags>
 ```
 In the experiment `<exp_name>`, unfix the value of tags according to `<tags>`.
 Tags must be specified without values in `<tags>` (e.g., `"color, shape"`).
 
-##### 3.4. `tag update`
+##### 4.4. `tag update`
 ```
 $ tagit tag update <exp_name> <tags>
 ```
@@ -267,21 +276,21 @@ In `<tags>`, `=` is used for limiting the scope of update, and `->` is used for 
 For example, `"color=red, shape=sphere, color->blue, volume->10L"` updates `color` to `blue` and `volume` to `10L`, for records with `color=red, shape=sphere`.
 
 
-#### 4. `export`
+#### 5. `export`
 ```
 $ tagit export <output_dump>
 ```
 Export all experiment and data to `<output_dump>`.
 
 
-#### 5. `import`
+#### 6. `import`
 ```
 $ tagit import <db_dump>
 ```
 Import experiments and data from `<db_dump>`.
 
 
-#### 6. `reset`
+#### 7. `reset`
 ```
 $ tagit reset [-y]
 ```
