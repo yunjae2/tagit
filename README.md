@@ -129,7 +129,7 @@ $ tagit report perf -d "latency, iops"
 
 
 # 5. Delete a data
-$ tagit manage perf -r "mem=32GB"
+$ tagit data remove perf "mem=32GB"
 
 $ tagit report perf -d "latency, iops"
 [perf] (storage=sata_ssd, mem=16GB)
@@ -141,7 +141,7 @@ $ tagit report perf -d "latency, iops"
 
 
 # 6. Delete an experiment
-$ tagit manage perf -d
+$ tagit exp remove perf
 
 $ tagit list
 
