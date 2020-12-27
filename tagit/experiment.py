@@ -6,6 +6,7 @@ from . import taglist
 from . import dtaglist
 from collections import OrderedDict
 import sys
+import multiprocessing
 
 '''
 experiment table
@@ -427,8 +428,15 @@ def run_parser(exp_name, reparse=False):
             target_rows.append((params, dtag_status))
 
     # Run the parsing graph
+    concurrency = multiprocessing.cpu_count()
+    pool = multiprocessing.Pool(concurrency)
     for params, dtag_status in target_rows:
-        run_parsing_graph_backward(exp_name, parsing_graph, params, dtag_status)
+        pool.apply_async(run_parsing_graph_backward, \
+                args=(exp_name, parsing_graph, params, dtag_status))
+
+    # Wait for parsing workers
+    pool.close()
+    pool.join()
 
     parser.reset_status(exp_name)
 
