@@ -162,14 +162,21 @@ def get_data(exp_name, params, dtags):
     return data
 
 
-def get_dstat(exp_name, params, dstats):
+def get_data_status(exp_name, params):
+    '''
+    Return the status of the data (updated?) as well as the tags of the rows
+    that matches to the params
+
+    :param params: tag query
+    :return: The status of the data and tags of the rows
+    :rtype: []
+    '''
     # data: [{tag1: val1, tag2: val2, ..., dstat1: status, ...}, {...}, ...]
     eid = exp_id(exp_name)
 
     tags = taglist.get_tags(exp_name)
-    if dstats[0] == "*":
-        dtags = dtaglist.get_dtags(exp_name)
-        dstats = [utils.dtag2dstat(x) for x in dtags]
+    dtags = dtaglist.get_dtags(exp_name)
+    dstats = [utils.dtag2dstat(x) for x in dtags]
     conds = params
     cols = tags + dstats
     entities = query.get_entities(eid, conds, cols)
@@ -393,16 +400,23 @@ def run_parsing_graph_backward(exp_name, graph, params, dtags):
         _run_backward_each_leaf(exp_name, graph, params, dtags, leaf)
 
 
-def run_parser(exp_name):
+def run_parser(exp_name, reparse=False):
     parsing_graph, updated = parser.build_parsing_graph(exp_name)
-    rows = get_dstat(exp_name, {}, ["*"])
+    rows = get_data_status(exp_name, {})
     target_rows = []
 
+    # Choose the target rows to run parsers
     for row in rows:
-        need_run = updated
+        need_run = updated or reparse
         params = OrderedDict((k, [v]) for k, v in row.items() if not utils.is_dstat(k))
-        dtag_status = OrderedDict((utils.dstat2dtag(k), {"updated": v == "True", \
-                "up-to-date": False}) for k, v in row.items() if utils.is_dstat(k))
+        if reparse:
+            dtag_status = OrderedDict((utils.dstat2dtag(k), \
+                    {"updated": True, "up-to-date": False}) \
+                    for k, v in row.items() if utils.is_dstat(k))
+        else:
+            dtag_status = OrderedDict((utils.dstat2dtag(k), \
+                    {"updated": v == "True", "up-to-date": False}) \
+                    for k, v in row.items() if utils.is_dstat(k))
 
         if not need_run:
             for dtag, status in dtag_status.items():
@@ -412,6 +426,7 @@ def run_parser(exp_name):
         if need_run:
             target_rows.append((params, dtag_status))
 
+    # Run the parsing graph
     for params, dtag_status in target_rows:
         run_parsing_graph_backward(exp_name, parsing_graph, params, dtag_status)
 

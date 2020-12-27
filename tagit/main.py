@@ -298,6 +298,7 @@ def reporter(args):
     csv_file = args.csv
     hrchy_path = args.f
     dtag_name_str = args.d
+    reparse = args.reparse
 
     params = utils.param_dict(param_str)
     dtags = utils.mkup_dtags(dtag_name_str)
@@ -306,7 +307,7 @@ def reporter(args):
     validate_params(exp_name, params, dtags)
 
     # Lazy parsing
-    experiment.run_parser(exp_name)
+    experiment.run_parser(exp_name, reparse=reparse)
 
     # data: [{tag1: val1, tag2: val2, ..., dtag1: data1, ...}, {...}, ...]
     data = experiment.get_data(exp_name, params, dtags)
@@ -582,6 +583,8 @@ def parse_args():
             help='Save results in hierarchical files')
     rep_parser.add_argument('-d', type=str, metavar='categories', default='*',
             help='data category to report (e.g., "latency, throughput")')
+    rep_parser.add_argument('-r', '--reparse', action='store_true',
+            help='rerun all parsing rules')
     rep_parser.set_defaults(worker=reporter)
 
 

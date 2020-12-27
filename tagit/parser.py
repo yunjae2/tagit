@@ -130,6 +130,14 @@ def reset_status(exp_name: str):
 
 
 def build_parsing_graph(exp_name: str):
+    """
+    Build the parsing graph of an experiment.
+
+    :param exp_name: Name of the experiment
+    :return: The parsing graph and if any rule is added or updated since the
+    last parsing
+    :rtype: (dict, bool)
+    """
     pid = parser_id(exp_name)
     if not _exists(pid):
         return {}
